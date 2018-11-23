@@ -49,6 +49,8 @@
 
 # JPEG
 /dev/m2m1shot_jpeg	      0660   cameraserver   media
+/dev/video13              0660   media      media
+/dev/video14              0660   media      media
 
 # mfc
 /dev/video6               0660   mediacodec     mediadrm
@@ -61,6 +63,7 @@
 /dev/video102             0660   cameraserver   cameraserver
 /dev/video103             0660   cameraserver   cameraserver
 /dev/video104             0660   cameraserver   cameraserver
+/dev/video109             0660   cameraserver      cameraserver
 /dev/video110             0660   cameraserver   cameraserver
 /dev/video111             0660   cameraserver   cameraserver
 /dev/video112             0660   cameraserver   cameraserver
@@ -99,6 +102,37 @@
 /sys/devices/system/cpu/cpu*   cpufreq/interactive/input_boost                 0660    system  system
 /sys/devices/system/cpu/cpu*   cpufreq/interactive/boostpulse_duration         0660    system  system
 /sys/devices/system/cpu/cpu*   cpufreq/interactive/io_is_busy                  0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/cpu_util                    0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/enforced_mode               0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/mode                        0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_cluster0_min_freq     0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_enter_load            0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_enter_time            0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_exit_load             0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/multi_exit_time             0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/param_index                 0200    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_cluster0_min_freq    0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_enter_load           0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_enter_time           0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_exit_load            0660    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/single_exit_time            0660    system  system
+# MIF
+/dev/block/platform/15570000.ufs/by-name/RADIO     0660   system     radio
+/dev/block/platform/15570000.ufs/by-name/DNT     0660   system     system
+/dev/block/mmcblk0p13     0660   system     radio
+/dev/block/mmcblk0p15     0660   system     system
+/dev/umts*                0660   system     radio
+/dev/umts_csd             0660   system     loop_radio
+/dev/smd4		  0660	 system	    radio
+
+# QCOM MIF
+/dev/subsys_esoc*         0660   system     radio
+/dev/mhi_pipe_*             0660   radio      radio
+/dev/esoc-*             0660   system    radio
+
+# sensor sysfs properties
+/sys/devices/virtual/input/input*	poll_delay	0660	system	radio
+/sys/devices/virtual/input/input*	enable		0660	system	radio
 
 # Sensorhub IIO
 /dev/ssp_sensorhub        0660   system       system
@@ -107,6 +141,16 @@
 /sys/devices/14d30000.spi/spi_master/spi1/spi1.0/iio:device*    buffer/length       0660    system    system
 /sys/bus/iio/devices/iio:device*    0664   system     radio
 
+# Broadcom Sensorhub Bridge Driver
+/dev/bbd_sensor           0660   system     system
+/dev/bbd_control          0660   system     system
+/dev/bbd_packet           0660   system     system
+/dev/bbd_reliable         0660   system     system
+/dev/bbd_sio              0660   system     system
+/dev/bbd_patch            0660   system     system
+/dev/ttyBCM*              0660   system     system
+# FM Radio
+/dev/radio0               0660   system     audio
 # Google FRP solution
 /dev/block/platform/15570000.ufs/by-name/PERSISTENT    0660    system    system
 
