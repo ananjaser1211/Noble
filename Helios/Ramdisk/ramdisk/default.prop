@@ -40,3 +40,12 @@ persist.adb.notify=0
 ro.bootimage.build.date=Mon Sep 3 20:02:50 KST 2018
 ro.bootimage.build.date.utc=1535972570
 ro.bootimage.build.fingerprint=samsung/a8xeltejt/a8xelte:8.0.0/R16NW/A810FXXU2CRH7:user/test-keys
+# Helios Tweaks
+ro.config.tima=0
+ro.security.vaultkeeper.feature=0
+ro.frp.pst=
+ro.securestorage.support=false
+ro.config.dmverity=false
+ro.config.rkp=false
+ro.config.kap=false
+ro.config.tima=0
