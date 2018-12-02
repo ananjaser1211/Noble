@@ -75,7 +75,6 @@ static void initialize_variable(struct ssp_data *data)
 	for (type = 0; type < SENSOR_TYPE_MAX; type++) {
 		data->delay[type] = DEFUALT_POLLING_DELAY;
 		data->aiCheckStatus[type] = INITIALIZATION_STATE;
-		data->sensor_dump[type] = NULL;
 	}
 
 	data->uSensorState = NORMAL_SENSOR_STATE_K;

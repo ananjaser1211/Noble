@@ -159,9 +159,6 @@ int select_irq_msg(struct ssp_data *data)
 	msg_type = msg_options & SSP_SPI_MASK;
 	memcpy(&chLength, &chTempBuf[2], 2);
 
-	if(chLength == 0)
-		ssp_errf("lengh is 0 - buf:0x%x 0x%x msg_type:%d",chTempBuf[0],chTempBuf[1],msg_type);
-
 	switch (msg_type) {
 	case AP2HUB_READ:
 	case AP2HUB_WRITE:
@@ -215,13 +212,6 @@ exit:
 		mutex_unlock(&data->pending_mutex);
 		break;
 	case HUB2AP_WRITE:
-		if(chLength == 0)
-		{
-			ssp_errf("HUB2AP_WRITE length is 0");
-			ret = -EINVAL;
-			break;
-		}
-		
 		buffer = kzalloc(chLength, GFP_KERNEL);
 		if (buffer == NULL) {
 			ssp_errf("failed to alloc memory for buffer");
@@ -306,7 +296,7 @@ int send_instruction(struct ssp_data *data, u8 uInst,
 	if (data->fw_dl_state == FW_DL_STATE_DOWNLOADING) {
 		ssp_errf("Skip Inst! DL state = %d", data->fw_dl_state);
 		return SUCCESS;
-	} else if ((!(data->uSensorState & (1ULL << uSensorType)))
+	} else if ((!(data->uSensorState & (1 << uSensorType)))
 		&& (uInst <= CHANGE_DELAY)) {
 		ssp_errf("Bypass Inst Skip! - %u", uSensorType);
 		return FAIL;
@@ -376,7 +366,7 @@ int send_instruction_sync(struct ssp_data *data, u8 uInst,
 	if (data->fw_dl_state == FW_DL_STATE_DOWNLOADING) {
 		ssp_errf("Skip Inst! DL state = %d", data->fw_dl_state);
 		return SUCCESS;
-	} else if ((!(data->uSensorState & (1ULL << uSensorType)))
+	} else if ((!(data->uSensorState & (1 << uSensorType)))
 		&& (uInst <= CHANGE_DELAY)) {
 		ssp_errf("Bypass Inst Skip! - %u", uSensorType);
 		return FAIL;
@@ -640,7 +630,7 @@ void set_proximity_threshold(struct ssp_data *data,
 
 	struct ssp_msg *msg;
 
-	if (!(data->uSensorState & (1ULL << SENSOR_TYPE_PROXIMITY))) {
+	if (!(data->uSensorState & (1 << SENSOR_TYPE_PROXIMITY))) {
 		ssp_infof("Skip this function!, proximity sensor is not connected(0x%llx)",
 			data->uSensorState);
 		return;
@@ -671,47 +661,6 @@ void set_proximity_threshold(struct ssp_data *data,
 
 	ssp_info("Proximity Threshold - %u, %u", uData1, uData2);
 }
-
-void set_light_coef(struct ssp_data *data)
-{
-	int iRet = 0;
-	struct ssp_msg *msg;
-
-	if (!(data->uSensorState & (1ULL << SENSOR_TYPE_LIGHT))) {
-		pr_info("[SSP]: %s - Skip this function!!!,"\
-			"light sensor is not connected(0x%llx)\n",
-			__func__, data->uSensorState);
-		return;
-	}
-
-	msg = kzalloc(sizeof(*msg), GFP_KERNEL);
-	if (msg == NULL) {
-		pr_err("[SSP] %s, failed to alloc memory for ssp_msg\n",
-			__func__);
-		return;
-	}
-
-	msg->cmd = MSG2SSP_AP_SET_LIGHT_COEF;
-	msg->length = sizeof(data->light_coef);
-	msg->options = AP2HUB_WRITE;
-	msg->buffer = (char *) kzalloc(sizeof(data->light_coef), GFP_KERNEL);
-	msg->free_buffer = 1;
-
-	memcpy(msg->buffer, data->light_coef, sizeof(data->light_coef));
-
-	iRet = ssp_spi_async(data, msg);
-
-	if (iRet != SUCCESS) {
-		pr_err("[SSP]: %s - MSG2SSP_AP_SET_LIGHT_COEF CMD fail %d\n",
-			__func__, iRet);
-		return;
-	}
-
-	pr_info("[SSP]: %s - %d %d %d %d %d %d %d\n", __func__,
-		data->light_coef[0], data->light_coef[1], data->light_coef[2],
-		data->light_coef[3], data->light_coef[4], data->light_coef[5], data->light_coef[6]);
-}
-
 
 void set_proximity_barcode_enable(struct ssp_data *data, bool bEnable)
 {
@@ -783,13 +732,11 @@ uint64_t get_sensor_scanning_info(struct ssp_data *data)
 	msg->free_buffer = 0;
 
 	ret = ssp_spi_sync(data, msg, 1000);
-	if(ret < 0)
-		ssp_errf("MSG2SSP_AP_SENSOR_SCANNING fail %d",ret);
 
 	sensor_scanning_state[SENSOR_TYPE_MAX] = '\0';
 	for (z = 0; z < SENSOR_TYPE_MAX; z++)
 		sensor_scanning_state[SENSOR_TYPE_MAX - 1 - z]
-			= (result & (1ULL << z)) ? '1' : '0';
+			= (result & (1 << z)) ? '1' : '0';
 
 	ssp_info("state: %s", sensor_scanning_state);
 

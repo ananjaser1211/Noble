@@ -98,7 +98,6 @@ int gyro_open_calibration(struct ssp_data *data)
 		data->gyrocal.y = 0;
 		data->gyrocal.z = 0;
 
-		pr_err("[SSP]: %s - Can't open calibration file %d\n", __func__, ret);
 		return ret;
 	}
 
@@ -158,7 +157,7 @@ int set_gyro_cal(struct ssp_data *data)
 	int ret = 0;
 	struct ssp_msg *msg;
 	s16 gyro_cal[3];
-	if (!(data->uSensorState & (1ULL << SENSOR_TYPE_GYROSCOPE))) {
+	if (!(data->uSensorState & (1 << SENSOR_TYPE_GYROSCOPE))) {
 		pr_info("[SSP]: %s - Skip this function!!!"\
 			", gyro sensor is not connected(0x%llx)\n",
 			__func__, data->uSensorState);
@@ -536,7 +535,7 @@ static ssize_t k6ds3tr_gyro_selftest(char *buf, struct ssp_data *data)
 			    total_count;
 		}
 		if (rms[i] < 0)
-			temp = 1ULL << 31;
+			temp = 1 << 31;
 
 		dps_rms[i] = selftest_sqrt(temp) / DEF_GYRO_SENS_STM;
 
@@ -757,7 +756,7 @@ ssize_t mpu6500_gyro_selftest(char *buf, struct ssp_data *data)
 			    total_count;
 		}
 		if (rms[i] < 0)
-			temp = 1ULL << 31;
+			temp = 1 << 31;
 
 		dps_rms[i] = selftest_sqrt(temp) / DEF_GYRO_SENS;
 
@@ -951,7 +950,7 @@ static ssize_t gyro_selftest_dps_store(struct device *dev,
 
 	struct ssp_msg *msg;
 
-	if (!(data->uSensorState & (1ULL << SENSOR_TYPE_GYROSCOPE)))
+	if (!(data->uSensorState & (1 << SENSOR_TYPE_GYROSCOPE)))
 		goto exit;
 
 	msg = kzalloc(sizeof(*msg), GFP_KERNEL);
@@ -961,7 +960,7 @@ static ssize_t gyro_selftest_dps_store(struct device *dev,
 	msg->buffer = &chTempBuf;
 	msg->free_buffer = 0;
 
-	sscanf(buf, "%9d", &new_dps);
+	sscanf(buf, "%d", &new_dps);
 
 	if (new_dps == GYROSCOPE_DPS250)
 		msg->options |= 0 << SSP_GYRO_DPS;

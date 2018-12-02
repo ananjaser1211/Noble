@@ -30,7 +30,5 @@ enum {
 int get_msdelay(int64_t dDelayRate);
 int initialize_sysfs(struct ssp_data *data);
 void remove_sysfs(struct ssp_data *data);
-void enable_sensor(struct ssp_data *data, int iSensorType, int64_t dNewDelay);
-int ssp_remove_sensor(struct ssp_data *data, unsigned int uChangedSensor, unsigned int uNewEnable);
 
 #endif

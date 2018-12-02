@@ -101,7 +101,7 @@ int set_accel_cal(struct ssp_data *data)
 	struct ssp_msg *msg;
 	s16 accel_cal[3];
 
-	if (!(data->uSensorState & (1ULL << ACCELEROMETER_SENSOR))) {
+	if (!(data->uSensorState & (1 << ACCELEROMETER_SENSOR))) {
 		pr_info("[SSP]: %s - Skip this function!!!"\
 			", accel sensor is not connected(0x%llx)\n",
 			__func__, data->uSensorState);

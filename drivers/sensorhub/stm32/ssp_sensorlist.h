@@ -48,7 +48,6 @@
 #define SENSOR_INFO_PICK_UP_GESTURE		{"pickup_gesture", true, REPORT_MODE_CONTINUOUS, 1, 1}
 #define SENSOR_INFO_PROXIMITY_RAW		{"", true, REPORT_MODE_ON_CHANGE, 1, 0}
 #define SENSOR_INFO_GEOMAGNETIC_POWER	{"geomagnetic_power", true, REPORT_MODE_CONTINUOUS, 6, 6}
-#define SENSOR_INFO_SCONTEXT            {"scontext_iio", true, REPORT_MODE_CONTINUOUS, 0, 25}
-#define SENSOR_INFO_LIGHT_CCT			{"light_cct_sensor", true, REPORT_MODE_ON_CHANGE, 18, 18}
+#define SENSOR_INFO_META				{"meta_event", true, REPORT_MODE_CONTINUOUS, 8, 8}
 
 #endif

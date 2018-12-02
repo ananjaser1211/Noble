@@ -119,7 +119,7 @@ int set_gyro_cal(struct ssp_data *data)
 	int iRet = 0;
 	struct ssp_msg *msg;
 	s16 gyro_cal[3];
-	if (!(data->uSensorState & (1ULL << GYROSCOPE_SENSOR))) {
+	if (!(data->uSensorState & (1 << GYROSCOPE_SENSOR))) {
 		pr_info("[SSP]: %s - Skip this function!!!"\
 			", gyro sensor is not connected(0x%llx)\n",
 			__func__, data->uSensorState);
@@ -304,7 +304,7 @@ static ssize_t gyro_selftest_dps_store(struct device *dev,
 
 	struct ssp_msg *msg;
 
-	if (!(data->uSensorState & (1ULL << GYROSCOPE_SENSOR)))
+	if (!(data->uSensorState & (1 << GYROSCOPE_SENSOR)))
 		goto exit;
 
 	msg = kzalloc(sizeof(*msg), GFP_KERNEL);

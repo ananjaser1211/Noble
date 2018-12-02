@@ -20,7 +20,8 @@ static mm_segment_t backup_fs;
 int debug_crash_dump(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 {
 	struct timeval cur_time;
-
+	char strFilePath[100];
+	int ret_write = 0;
 	unsigned char datacount = pchRcvDataFrame[1];
 	unsigned int databodysize = iLength - 2;
 	char *databody = &pchRcvDataFrame[2];
@@ -39,13 +40,9 @@ int debug_crash_dump(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 	}
 
 	if (data->is_mcu_dump_mode == true)	{
-		int ret_write = 0;
-		
 		wake_lock(&data->ssp_wake_lock);
 
 		if (data->realtime_dump_file == NULL) {
-			char strFilePath[100];
-
 			backup_fs = get_fs();
 			set_fs(get_ds());
 
@@ -110,7 +107,7 @@ void ssp_dump_task(struct work_struct *work)
 	struct timeval cur_time;
 	mm_segment_t fs;
 	int buf_len, packet_len, residue;
-	int index = 0, ret_trans = 0, ret_write = 0;
+	int ret = 0, index = 0, ret_trans = 0, ret_write = 0;
 
 	big = container_of(work, struct ssp_big, work);
 	ssp_errf("start ssp dumping (%d)(%d)",
@@ -137,9 +134,9 @@ void ssp_dump_task(struct work_struct *work)
 #endif
 
 		if (IS_ERR(dump_file)) {
-			int ret = PTR_ERR(dump_file);
-			ssp_errf("Can't open dump file %d",ret);
+			ssp_errf("Can't open dump file");
 			set_fs(fs);
+			ret = PTR_ERR(dump_file);
 			wake_unlock(&big->data->ssp_wake_lock);
 			kfree(big);
 			return;
@@ -254,7 +251,7 @@ void sync_sensor_state(struct ssp_data *data)
 
 	for (uSensorCnt = 0; uSensorCnt < SENSOR_TYPE_MAX; uSensorCnt++) {
 		mutex_lock(&data->enable_mutex);
-		if (atomic64_read(&data->aSensorEnable) & (1ULL << uSensorCnt)) {
+		if (atomic64_read(&data->aSensorEnable) & (1 << uSensorCnt)) {
 			s32 dMsDelay
 				= get_msdelay(data->delay[uSensorCnt]);
 			memcpy(&buf[0], &dMsDelay, 4);
@@ -439,7 +436,7 @@ bool check_wait_event(struct ssp_data *data)
 		/* The sensor is registered
 		   And none batching mode
 		   And there is no sensor event over 5sec */
-		if ((atomic64_read(&data->aSensorEnable) & (1ULL << sensor))
+		if ((atomic64_read(&data->aSensorEnable) & (1 << sensor))
 			&& data->batch_max_latency[sensor] == 0
 			&& data->latest_timestamp[sensor] + 5000000000ULL < timestamp) {
 
@@ -472,11 +469,11 @@ static void debug_work_func(struct work_struct *work)
 	}
 
 	for (type = 0; type < SENSOR_TYPE_MAX; type++)
-		if ((atomic64_read(&data->aSensorEnable) & (1ULL << type))
+		if ((atomic64_read(&data->aSensorEnable) & (1 << type))
 			|| data->batch_max_latency[type])
 			print_sensordata(data, type);
 
-	if (((atomic64_read(&data->aSensorEnable) & (1ULL << SENSOR_TYPE_ACCELEROMETER))
+	if (((atomic64_read(&data->aSensorEnable) & (1 << SENSOR_TYPE_ACCELEROMETER))
 		&& (data->batch_max_latency[SENSOR_TYPE_ACCELEROMETER] == 0)
 		&& (data->cnt_irq == 0) && (data->cnt_timeout > 0))
 		|| (data->cnt_timeout > LIMIT_TIMEOUT_CNT))

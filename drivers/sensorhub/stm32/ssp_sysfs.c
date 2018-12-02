@@ -14,7 +14,6 @@
  */
 
 #include "ssp_sysfs.h"
-#include "ssp_dump.h"
 
 struct batch_config {
 	int64_t timeout;
@@ -55,7 +54,7 @@ static void enable_sensor(struct ssp_data *data,
 
 	switch (data->aiCheckStatus[type]) {
 	case ADD_SENSOR_STATE:
-		/*ssp_infof("add %u, New = %lldns", 1ULL << type, delay);*/
+		/*ssp_infof("add %u, New = %lldns", 1 << type, delay);*/
 		ssp_infof("ADD %s , type %d DELAY %lld ns", data->info[type].name, type, delay);
 
 		if (type == SENSOR_TYPE_PROXIMITY) {
@@ -65,15 +64,10 @@ static void enable_sensor(struct ssp_data *data,
 				data->uProxLoThresh);
 			ssp_infof("send threshold hi %d, low %d \n", data->uProxHiThresh, data->uProxLoThresh);
 		}
-#if ANDROID_VERSION >= 80000
-		else if(type == SENSOR_TYPE_LIGHT || type == SENSOR_TYPE_LIGHT_CCT) {
-			data->light_log_cnt = 0;
-		}
-#else
 		else if(type == SENSOR_TYPE_LIGHT) {
 			data->light_log_cnt = 0;
 		}
-#endif
+		
 		memcpy(&uBuf[0], &ms_delay, 4);
 		memcpy(&uBuf[4], &batch_latency, 4);
 		uBuf[8] = batch_options;
@@ -85,7 +79,7 @@ static void enable_sensor(struct ssp_data *data,
 		if (ret <= 0) {
 			new_enable =
 				(uint64_t)atomic64_read(&data->aSensorEnable)
-				& (~(uint64_t)(1ULL << type));
+				& (~(uint64_t)(1 << type));
 			atomic64_set(&data->aSensorEnable, new_enable);
 
 			data->aiCheckStatus[type] = NO_SENSOR_STATE;
@@ -103,8 +97,8 @@ static void enable_sensor(struct ssp_data *data,
 			== get_msdelay(data->delay[type]))
 			break;
 
-		ssp_infof("Change %llu, New = %lldns",
-			1ULL << type, delay);
+		ssp_infof("Change %u, New = %lldns",
+			1 << type, delay);
 
 		memcpy(&uBuf[0], &ms_delay, 4);
 		memcpy(&uBuf[4], &batch_latency, 4);
@@ -143,8 +137,8 @@ static void change_sensor_delay(struct ssp_data *data,
 			== get_msdelay(data->delay[type]))
 			break;
 
-		ssp_infof("Change %llu, New = %lldns",
-			1ULL << type, delay);
+		ssp_infof("Change %u, New = %lldns",
+			1 << type, delay);
 
 		memcpy(&uBuf[0], &ms_delay, 4);
 		memcpy(&uBuf[4], &batch_latency, 4);
@@ -173,8 +167,8 @@ static int ssp_remove_sensor(struct ssp_data *data,
 	u8 uBuf[4];
 	int64_t delay = data->delay[type];
 
-	ssp_infof("remove sensor = %llu, current state = %lld",
-		(1ULL << type), new_enable);
+	ssp_infof("remove sensor = %d, current state = %lld",
+		(1 << type), new_enable);
 
 	data->delay[type] = DEFUALT_POLLING_DELAY;
 	data->batch_max_latency[type] = 0;
@@ -182,7 +176,7 @@ static int ssp_remove_sensor(struct ssp_data *data,
 
 	if (type == SENSOR_TYPE_ORIENTATION) {
 		if (!(atomic64_read(&data->aSensorEnable)
-			& (1ULL << SENSOR_TYPE_ACCELEROMETER))) {
+			& (1 << SENSOR_TYPE_ACCELEROMETER))) {
 			type = SENSOR_TYPE_ACCELEROMETER;
 		} else {
 			change_sensor_delay(data, SENSOR_TYPE_ACCELEROMETER,
@@ -191,7 +185,7 @@ static int ssp_remove_sensor(struct ssp_data *data,
 		}
 	} else if (type == SENSOR_TYPE_ACCELEROMETER) {
 		if (atomic64_read(&data->aSensorEnable)
-			& (1ULL << SENSOR_TYPE_ORIENTATION)) {
+			& (1 << SENSOR_TYPE_ORIENTATION)) {
 			change_sensor_delay(data, SENSOR_TYPE_ORIENTATION,
 				data->delay[SENSOR_TYPE_ORIENTATION]);
 			return 0;
@@ -199,7 +193,7 @@ static int ssp_remove_sensor(struct ssp_data *data,
 	}
 
 	if (!data->is_ssp_shutdown)
-		if (atomic64_read(&data->aSensorEnable) & (1ULL << type)) {
+		if (atomic64_read(&data->aSensorEnable) & (1 << type)) {
 			s32 ms_delay = get_msdelay(delay);
 			memcpy(&uBuf[0], &ms_delay, 4);
 
@@ -289,10 +283,10 @@ static ssize_t set_sensors_enable(struct device *dev,
 	}
 
 	for (type = 0; type < SENSOR_TYPE_MAX; type++) {
-		if ((atomic64_read(&data->aSensorEnable) & (1ULL << type))
-			!= (new_enable & (1ULL << type))) {
+		if ((atomic64_read(&data->aSensorEnable) & (1 << type))
+			!= (new_enable & (1 << type))) {
 
-			if (!(new_enable & (1ULL << type))) {
+			if (!(new_enable & (1 << type))) {
 				data->is_data_reported[type] = false;
 				ssp_remove_sensor(data, type,
 					new_enable); /* disable */
@@ -336,7 +330,7 @@ static ssize_t set_flush(struct device *dev,
 		return -EINVAL;
 
 	sensor_type = (u8)dTemp;
-	if (!(atomic64_read(&data->aSensorEnable) & (1ULL << sensor_type)))
+	if (!(atomic64_read(&data->aSensorEnable) & (1 << sensor_type)))
 		return -EINVAL;
 
 	if (flush(data, sensor_type) < 0) {
@@ -367,7 +361,7 @@ static ssize_t set_acc_delay(struct device *dev,
 	if (kstrtoll(buf, 10, &delay) < 0)
 		return -EINVAL;
 
-	if ((atomic64_read(&data->aSensorEnable) & (1ULL << SENSOR_TYPE_ORIENTATION)) &&
+	if ((atomic64_read(&data->aSensorEnable) & (1 << SENSOR_TYPE_ORIENTATION)) &&
 		(data->delay[SENSOR_TYPE_ORIENTATION] < delay))
 		data->delay[SENSOR_TYPE_ACCELEROMETER] = delay;
 	else
@@ -687,7 +681,7 @@ static ssize_t set_sensor_axis(struct device *dev,
 	int position = 0;
 	int ret = 0;
 
-	sscanf(buf, "%9d,%9d", &sensor, &position);
+	sscanf(buf, "%d,%d", &sensor, &position);
 
 	if (position < 0 || position > 7)
 		return -EINVAL;
@@ -748,7 +742,7 @@ static ssize_t set_send_instruction(struct device *dev,
 	int instruction[4] = { 0, };
 	int ret = 0;
 
-	sscanf(buf, "%9d,%9d,%9d,%9d",
+	sscanf(buf, "%d,%d,%d,%d",
 		&instruction[0], &instruction[1],
 		&instruction[2], &instruction[3]);
 
@@ -772,215 +766,7 @@ static ssize_t show_sensor_state(struct device *dev,
 	return sprintf(buf, "%s\n", data->sensor_state);
 }
 
-static ssize_t sensor_dump_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	struct ssp_data *data  = dev_get_drvdata(dev);
-	int types[] = SENSOR_DUMP_SENSOR_LIST;
-	char str_no_sensor_dump[] = "there is no sensor dump";
-	int i=0, ret;
-	char* sensor_dump;
-	char temp[sensor_dump_length(DUMPREGISTER_MAX_SIZE)+LENGTH_SENSOR_TYPE_MAX+2]={0,};
 
-	sensor_dump = (char*)kzalloc((sensor_dump_length(DUMPREGISTER_MAX_SIZE)+LENGTH_SENSOR_TYPE_MAX+3)*(sizeof(types)/sizeof(types[0])), GFP_KERNEL);
-
-	for(i=0;i<sizeof(types)/sizeof(types[0]);i++)
-	{
-		if(data->sensor_dump[types[i]] != NULL)
-		{
-			snprintf(temp, (int)strlen(data->sensor_dump[types[i]])+LENGTH_SENSOR_TYPE_MAX+3,
-				"%3d\n%s\n\n", types[i],data->sensor_dump[types[i]]); 			/* %3d -> 3 : LENGTH_SENSOR_TYPE_MAX */
-			strcpy(&sensor_dump[(int)strlen(sensor_dump)],temp);
-		}
-	}
-
-	if((int)strlen(sensor_dump) == 0)
-		ret = snprintf(buf, (int)strlen(str_no_sensor_dump)+1, "%s\n",str_no_sensor_dump);
-	else
-		ret = snprintf(buf, (int)strlen(sensor_dump)+1, "%s\n", sensor_dump);
-
-	kfree(sensor_dump);
-
-	return ret;
-}
-
-static ssize_t sensor_dump_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t size)
-{
-	struct ssp_data *data  = dev_get_drvdata(dev);
-	int sensor_type, ret;
-	char name[LENGTH_SENSOR_NAME_MAX+1] ={0,};
-
-	sscanf(buf, "%30s", name);		/* 30 : LENGTH_SENSOR_NAME_MAX */
-
-	if((strcmp(name, "all")) == 0)
-	{
-		ret = send_all_sensor_dump_command(data);
-	}
-	else
-	{
-		if(strcmp(name, "accelerometer") == 0)
-			sensor_type = SENSOR_TYPE_ACCELEROMETER;
-		else if(strcmp(name, "gyroscope") == 0)
-			sensor_type = SENSOR_TYPE_GYROSCOPE;
-		else if(strcmp(name, "magnetic") == 0)
-			sensor_type = SENSOR_TYPE_GEOMAGNETIC_FIELD;
-		else if(strcmp(name, "pressure") == 0)
-			sensor_type = SENSOR_TYPE_PRESSURE;
-		else if(strcmp(name, "proximity") == 0)
-			sensor_type = SENSOR_TYPE_PROXIMITY;
-		else if(strcmp(name, "light") == 0)
-			sensor_type = SENSOR_TYPE_LIGHT;
-		else
-		{
-			pr_err("[SSP] %s - is not supported : %s",__func__,buf);
-			sensor_type = -1;
-			return -EINVAL;
-		}
-		ret = send_sensor_dump_command(data,sensor_type);
-	}
-
-	return (ret == SUCCESS)? size : ret;
-}
-
-#ifdef CONFIG_SSP_REGISTER_RW
-int htoi(char input)
-{
-    int ret = 0;
-    if('0' <= input && input <= '9')
-        return ret = input - '0';
-    else if('a'<= input && input <= 'f')
-        return ret = input - 'a' + 10;
-    else if('A' <= input && input <= 'F')
-        return ret = input - 'A' + 10;
-    else
-        return 0;
-}
-
-int check_inputted_register_string(const char* string, char* CheckString[4])
-{
-    int ret = 0;
-    int index = 0;
-    char Inputstring[20] = {0, };
-    char* Dupstring = NULL;
-
-    memcpy(Inputstring, string, strlen(string));
-    Dupstring = kstrdup(Inputstring, GFP_KERNEL);
-
-    while((CheckString[index] = strsep(&Dupstring, " ")) != NULL)
-    {
-        u32 tmp = 0;
-        switch(index)
-        {
-            case 0 :
-                if (kstrtou32(&CheckString[index][0], 10, &tmp) < 0 || (tmp >= SENSOR_TYPE_MAX))
-                {
-                    ssp_infof("invalid(%d)",tmp);
-                    goto exit;
-                }
-                break;
-            case 1 :
-                if(CheckString[index][0] == 'r' || CheckString[index][0] == 'w')
-                {
-                   tmp = (CheckString[index][0] == 'w' ? 0 : 1);
-                }
-                else if (kstrtou32(&CheckString[index][0], 10, &tmp) < 0 || ((tmp != 0) && (tmp != 1)))
-                {
-                    ssp_infof("invalid r/w");
-                    goto exit;
-                }
-                break;
-            case 2 :
-            case 3 :
-                if(CheckString[index][0] != '0' && CheckString[index][1] != 'x')
-                {
-                    ssp_infof("invalid value(0xOO) %s", CheckString[index]);
-                    goto exit;
-                }
-                tmp = (uint8_t)((htoi(CheckString[index][2])<< 4) | htoi(CheckString[index][3]));
-                ret = index;
-                break;
-            default:
-                ret = false;
-                goto exit;
-                break;
-        }
-        CheckString[index++][0] = tmp;
-    }
-    kfree(Dupstring);
-    return ret;
-exit:
-    ret = 0;
-    kfree(Dupstring);
-    ssp_infof("ret %d", ret);
-    return ret;
-}
-
-static ssize_t register_rw_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-        struct ssp_data *data = dev_get_drvdata(dev);
-        if(data->registerValue[1] == 1) // 1 is read
-        {
-            return sprintf(buf, "sensor(%d) %c regi(0x%x) val(0x%x) ret(%d)\n",
-                                  data->registerValue[0], data->registerValue[1] == 1 ? 'r' : 'w',data->registerValue[2],data->registerValue[3],data->registerValue[4]);
-        }
-        else
-        {
-            if(data->registerValue[4] == true)
-                return sprintf(buf, "sensor(%d) %c regi(0x%x) val(0x%x) SUCCESS\n",
-                                  data->registerValue[0],  data->registerValue[1] == 1 ? 'r' : 'w',data->registerValue[2],data->registerValue[3]);
-            else
-                return sprintf(buf, "sensor(%d) %c regi(0x%x) val(0x%x) FAIL\n",
-                                  data->registerValue[0],  data->registerValue[1] == 1 ? 'r' : 'w',data->registerValue[2],data->registerValue[3]);
-        }
-}
-
-static ssize_t register_rw_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t size)
-{
-        struct ssp_data *data = dev_get_drvdata(dev);
-        struct ssp_msg *msg;
-        int index = 0, iRet = 0;
-        char* CheckString[4] = {0, };
-        char sendBuff[5] = {0, };
-
-        msg = kzalloc(sizeof(*msg), GFP_KERNEL);
-        if (ZERO_OR_NULL_PTR(msg)) {
-                pr_err("[SSP] %s, failed to alloc memory for ssp_msg\n", __func__);
-                return -ENOMEM;
-        }
-
-        iRet = check_inputted_register_string(buf, CheckString);
-
-        if(iRet == 0)
-        {
-            kfree(msg);
-            return -1;
-        }
-
-        msg->cmd = MSG2SSP_AP_REGISTER_SETTING;
-        msg->length = 5;
-        msg->options = AP2HUB_READ;
-        msg->data = 0;
-        msg->buffer = sendBuff;
-        msg->free_buffer = 0;
-
-       for(index = 0; index <= iRet; index++)
-                msg->data |= (u32)(CheckString[index][0] << (24 - 8*index));
-
-        iRet = ssp_spi_sync(data, msg, 2000);
-
-        if (iRet != SUCCESS)
-            pr_err("[SSP] %s - fail %d\n", __func__, iRet);
-
-        memcpy(data->registerValue, sendBuff, sizeof(sendBuff));
-        return size;
-}
-
-static DEVICE_ATTR(register_rw,S_IRUGO | S_IWUSR | S_IWGRP,
-	register_rw_show, register_rw_store);
-#endif	/* CONFIG_SSP_REGISTER_RW */
 static DEVICE_ATTR(mcu_rev, S_IRUGO, mcu_revision_show, NULL);
 static DEVICE_ATTR(mcu_name, S_IRUGO, mcu_model_name_show, NULL);
 static DEVICE_ATTR(mcu_update, S_IRUGO, mcu_update_kernel_bin_show, NULL);
@@ -1040,8 +826,6 @@ static DEVICE_ATTR(sensor_dot, S_IRUGO | S_IWUSR | S_IWGRP,
 static DEVICE_ATTR(send_instruction, S_IWUSR | S_IWGRP,
 	NULL, set_send_instruction);
 static DEVICE_ATTR(sensor_state, S_IRUGO, show_sensor_state, NULL);
-static DEVICE_ATTR(sensor_dump,S_IRUGO | S_IWUSR | S_IWGRP,
-	sensor_dump_show, sensor_dump_store);
 
 static struct device_attribute *mcu_attrs[] = {
 	&dev_attr_enable,
@@ -1076,10 +860,6 @@ static struct device_attribute *mcu_attrs[] = {
 	&dev_attr_sensor_dot,
 	&dev_attr_send_instruction,
 	&dev_attr_sensor_state,
-	&dev_attr_sensor_dump,
-#ifdef CONFIG_SSP_REGISTER_RW
-	&dev_attr_register_rw,
-#endif
 	NULL,
 };
 
@@ -1105,12 +885,6 @@ static long ssp_batch_ioctl(struct file *file, unsigned int cmd,
 
 	if ((cmd >> 8 & 0xFF) != BATCH_IOCTL_MAGIC) {
 		ssp_err("Invalid BATCH CMD %x", cmd);
-		return -EINVAL;
-	}
-
-	if(sensor_type >= SENSOR_TYPE_MAX)
-	{
-		ssp_err("Invalid sensor_type %d", sensor_type);
 		return -EINVAL;
 	}
 

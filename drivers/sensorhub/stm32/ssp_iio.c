@@ -14,7 +14,6 @@
  */
 
 #include "ssp_iio.h"
-#include "ssp_sensorhub.h"
 
 static void init_sensorlist(struct ssp_data *data)
 {
@@ -46,16 +45,10 @@ static void init_sensorlist(struct ssp_data *data)
 		SENSOR_INFO_UNKNOWN,
 		SENSOR_INFO_PICK_UP_GESTURE,
 		SENSOR_INFO_UNKNOWN,
-		SENSOR_INFO_UNKNOWN,
+		SENSOR_INFO_META,
 		SENSOR_INFO_UNKNOWN,
 		SENSOR_INFO_PROXIMITY_RAW,
 		SENSOR_INFO_GEOMAGNETIC_POWER,
-#if ANDROID_VERSION >= 80000
-		SENSOR_INFO_UNKNOWN,
-		SENSOR_INFO_SCONTEXT,
-		SENSOR_INFO_UNKNOWN,
-		SENSOR_INFO_LIGHT_CCT,
-#endif
 };	
 
 	memcpy(&data->info, sensorinfo, sizeof(data->info));
@@ -149,29 +142,14 @@ void report_sensor_data(struct ssp_data *data, int type,
 
 	} else if (type == SENSOR_TYPE_LIGHT) {
 		event->a_gain &= 0x03;
-		if (data->light_log_cnt < 3) {
-			ssp_info("Light Sensor : lux=%d r=%d g=%d b=%d c=%d atime=%d again=%d",
-			data->buf[SENSOR_TYPE_LIGHT].lux,
-			data->buf[SENSOR_TYPE_LIGHT].r, data->buf[SENSOR_TYPE_LIGHT].g,
-			data->buf[SENSOR_TYPE_LIGHT].b, data->buf[SENSOR_TYPE_LIGHT].w,
-			data->buf[SENSOR_TYPE_LIGHT].a_time, data->buf[SENSOR_TYPE_LIGHT].a_gain);
+		if(data->light_log_cnt < 3)
+		{
+			ssp_info("Light Sensor : r=%d g=%d b=%d c=%d atime=%d again=%d",
+			data->buf[SENSOR_TYPE_LIGHT].r,data->buf[SENSOR_TYPE_LIGHT].g,data->buf[SENSOR_TYPE_LIGHT].b,
+			data->buf[SENSOR_TYPE_LIGHT].w,data->buf[SENSOR_TYPE_LIGHT].a_time,data->buf[SENSOR_TYPE_LIGHT].a_gain);	
 			data->light_log_cnt++;
 		}
-	}
-#if ANDROID_VERSION >= 80000
-	else if (type == SENSOR_TYPE_LIGHT_CCT) {
-		event->a_gain &= 0x03;
-		if (data->light_log_cnt < 3) {
-			ssp_info("Light cct Sensor : lux=%d r=%d g=%d b=%d c=%d atime=%d again=%d",
-			data->buf[SENSOR_TYPE_LIGHT_CCT].lux,
-			data->buf[SENSOR_TYPE_LIGHT_CCT].r, data->buf[SENSOR_TYPE_LIGHT_CCT].g,
-			data->buf[SENSOR_TYPE_LIGHT_CCT].b, data->buf[SENSOR_TYPE_LIGHT_CCT].w,
-			data->buf[SENSOR_TYPE_LIGHT_CCT].a_time, data->buf[SENSOR_TYPE_LIGHT_CCT].a_gain);
-			data->light_log_cnt++;
-		}
-	}
-#endif
-	else if (type == SENSOR_TYPE_STEP_COUNTER) {
+	} else if (type == SENSOR_TYPE_STEP_COUNTER) {
 		data->buf[type].step_total += event->step_diff;
 	}
 
@@ -186,104 +164,39 @@ void report_sensor_data(struct ssp_data *data, int type,
 	}
 }
 
-void report_meta_data(struct ssp_data *data, struct sensor_value *s)
+void report_meta_data(struct ssp_data *data, int type, struct sensor_value *s)
 {
-	char *meta_event
-	        = kzalloc(data->info[s->meta_data.sensor].report_data_len,
-	                  GFP_KERNEL);
-
 	ssp_infof("what: %d, sensor: %d",
-	          s->meta_data.what, s->meta_data.sensor);
+		s->meta_data.what, s->meta_data.sensor);
 
-	if (!meta_event) {
-		ssp_errf("fail to allocate memory for meta event");
-		return;
-	}
-
-	memset(meta_event, META_EVENT,
-	       data->info[s->meta_data.sensor].report_data_len);
-	ssp_iio_push_buffers(data->indio_devs[s->meta_data.sensor],
-	                     META_TIMESTAMP, meta_event,
-	                     data->info[s->meta_data.sensor].report_data_len);
-	kfree(meta_event);
-}
-
-#if ANDROID_VERSION >= 80000
-void report_scontext_data(struct ssp_data *data, char *data_buf, u32 length)
-{
-	u64 timestamp;
-	char buf[SCONTEXT_HEADER_LEN + SCONTEXT_DATA_LEN + sizeof(timestamp)] = {0, };
-	char send_buf[1 + SCONTEXT_DATA_ONCE_LEN] = {0,};
-	u16 start, end;
-
-	ssp_sensorhub_log(__func__, data_buf, length);
-
-	start = 0;
-	memcpy(buf, &length, sizeof(length));
-
-	timestamp = get_current_timestamp();
-	memcpy(buf + SCONTEXT_HEADER_LEN + SCONTEXT_DATA_LEN, &timestamp, sizeof(timestamp));
-
-	while (start < length) {
-		int i;
-		if (start + SCONTEXT_DATA_LEN < length) {
-			end = start + SCONTEXT_DATA_LEN - 1;
-		} else {
-			memset(buf + SCONTEXT_HEADER_LEN, 0, SCONTEXT_DATA_LEN);
-			end = length - 1;
-		}
-		memcpy(buf + sizeof(length), &start, sizeof(u16));
-		memcpy(buf + sizeof(length) + sizeof(start), &end, sizeof(u16));
-		memcpy(buf + SCONTEXT_HEADER_LEN, data_buf + start, end - start + 1);
-
-		for (i = 0 ; i < sizeof(buf) ; i = i + SCONTEXT_DATA_ONCE_LEN) {
-			send_buf[0] = (char)(i / SCONTEXT_DATA_ONCE_LEN);
-			memcpy(&send_buf[1], &buf[i], SCONTEXT_DATA_ONCE_LEN);
-
-/*
-			ssp_infof("[%d] 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
-			          send_buf[0], send_buf[1], send_buf[2], send_buf[3], send_buf[4], send_buf[5], send_buf[6],
-			          send_buf[7], send_buf[8]);
-
-
-			ssp_infof("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
-			          send_buf[9], send_buf[10], send_buf[11], send_buf[12], send_buf[13], send_buf[14], send_buf[15],
-			          send_buf[16]);
-
-
-			ssp_infof("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
-			          send_buf[17], send_buf[18], send_buf[19], send_buf[20], send_buf[21], send_buf[22], send_buf[23],
-			          send_buf[24]);
-*/
-			mutex_lock(&data->indio_devs[SENSOR_TYPE_SCONTEXT]->mlock);
-			iio_push_to_buffers(data->indio_devs[SENSOR_TYPE_SCONTEXT], send_buf);
-			mutex_unlock(&data->indio_devs[SENSOR_TYPE_SCONTEXT]->mlock);
+	if ((s->meta_data.sensor == SENSOR_TYPE_ACCELEROMETER)
+		|| (s->meta_data.sensor == SENSOR_TYPE_GEOMAGNETIC_FIELD)
+		|| (s->meta_data.sensor == SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED)
+		|| (s->meta_data.sensor == SENSOR_TYPE_GYROSCOPE)
+		|| (s->meta_data.sensor == SENSOR_TYPE_PRESSURE)
+		|| (s->meta_data.sensor == SENSOR_TYPE_ROTATION_VECTOR)
+		|| (s->meta_data.sensor == SENSOR_TYPE_GAME_ROTATION_VECTOR)
+		|| (s->meta_data.sensor == SENSOR_TYPE_STEP_DETECTOR)) {
+		char *meta_event
+			= kzalloc(data->info[s->meta_data.sensor].report_data_len,
+					GFP_KERNEL);
+		if (!meta_event) {
+			ssp_errf("fail to allocate memory for meta event");
+			return;
 		}
 
-		start = end + 1;
-	}
-}
-
-void report_scontext_notice_data(struct ssp_data *data, char notice)
-{
-	char notice_buf[4] = {0x02, 0x01, 0x00, 0x00};
-	int len = 3;
-
-	notice_buf[2] = notice;
-
-	if (notice == MSG2SSP_AP_STATUS_WAKEUP) {
-		ssp_infof("wake up");
-	} else if (notice == MSG2SSP_AP_STATUS_SLEEP) {
-		ssp_infof("sleep");
-	} else if (notice == MSG2SSP_AP_STATUS_RESET) {
-		ssp_infof("reset");
+		memset(meta_event, META_EVENT,
+			data->info[s->meta_data.sensor].report_data_len);
+		ssp_iio_push_buffers(data->indio_devs[s->meta_data.sensor],
+				META_TIMESTAMP, meta_event,
+				data->info[s->meta_data.sensor].report_data_len);
+		kfree(meta_event);
 	} else {
-		ssp_errf("invalid notice(0x%x)", notice);
+		ssp_iio_push_buffers(data->indio_devs[type],
+				META_TIMESTAMP, (char *)&s->meta_data,
+				sizeof(s->meta_data));
 	}
-
-	report_scontext_data(data, notice_buf, len);
 }
-#endif
 
 static void *init_indio_device(struct ssp_data *data,
 			const struct iio_info *info,
@@ -355,19 +268,10 @@ int initialize_indio_dev(struct ssp_data *data)
 		data->indio_channels[type].channel = IIO_CHANNEL;
 		data->indio_channels[type].scan_index = IIO_SCAN_INDEX;
 		data->indio_channels[type].scan_type.sign = IIO_SIGN;
-#ifdef SENSOR_TYPE_SCONTEXT
-		if (type == SENSOR_TYPE_SCONTEXT) {
-			data->indio_channels[type].scan_type.realbits = (data->info[type].report_data_len) * BITS_PER_BYTE;
-			data->indio_channels[type].scan_type.storagebits = (data->info[type].report_data_len) *
-			                                                   BITS_PER_BYTE;
-		} else 
-#endif
-                {
-			data->indio_channels[type].scan_type.realbits = (data->info[type].report_data_len + timestamp_len) *
-			                                                BITS_PER_BYTE;
-			data->indio_channels[type].scan_type.storagebits = (data->info[type].report_data_len +
-			                                                    timestamp_len) * BITS_PER_BYTE;
-		}
+		data->indio_channels[type].scan_type.realbits =
+			(data->info[type].report_data_len+timestamp_len)*BITS_PER_BYTE;
+		data->indio_channels[type].scan_type.storagebits =
+			(data->info[type].report_data_len+timestamp_len)*BITS_PER_BYTE;
 		data->indio_channels[type].scan_type.shift = IIO_SHIFT;
 
 		data->indio_devs[type]

@@ -33,15 +33,6 @@ static ssize_t irled_send_store(struct device *dev,
 		pr_err("[SSP]: %s - failed to allocate memory\n", __func__);
 		return FAIL;
 	}
-
-	mutex_lock(&data->enable_mutex);
-	if ((atomic_read(&data->aSensorEnable) & (1 << PROXIMITY_SENSOR))) {
-		pr_info("[SSP] disable proximity sensor as IRLED cmd received\n");
-		data->reportedData[PROXIMITY_SENSOR] = false;
-		ssp_remove_sensor(data, PROXIMITY_SENSOR, 0);
-	}
-	mutex_unlock(&data->enable_mutex);
-
 	msg->cmd = MSG2SSP_AP_IRDATA_SEND;
 	msg->length = buf_len;
 	msg->options = AP2HUB_WRITE;
@@ -63,15 +54,6 @@ static ssize_t irled_send_store(struct device *dev,
 	}
 
 	pr_info("[SSP] %s IRLED SEND Success %d \n", __func__, iRet);
-
-	mutex_lock(&data->enable_mutex);
-	if ((atomic_read(&data->aSensorEnable) & (1 << PROXIMITY_SENSOR))) {
-		pr_info("[SSP] enable proximity sensor as IRLED cmd finished\n");
-		data->aiCheckStatus[PROXIMITY_SENSOR] = ADD_SENSOR_STATE;
-		enable_sensor(data, PROXIMITY_SENSOR, data->adDelayBuf[PROXIMITY_SENSOR]);
-	}
-	mutex_unlock(&data->enable_mutex);
-
 	return size;
 }
 

@@ -278,6 +278,7 @@ static ssize_t raw_data_store(struct device *dev,
 	char chTempbuf[4] = { 0 };
 	int iRet;
 	int64_t dEnable;
+	int iRetries = 50;
 	struct ssp_data *data = dev_get_drvdata(dev);
 	s32 dMsDelay = 20;
 	memcpy(&chTempbuf[0], &dMsDelay, 4);
@@ -287,7 +288,6 @@ static ssize_t raw_data_store(struct device *dev,
 		return iRet;
 
 	if (dEnable) {
-		int iRetries = 50;
 		data->buf[SENSOR_TYPE_GEOMAGNETIC_POWER].x = 0;
 		data->buf[SENSOR_TYPE_GEOMAGNETIC_POWER].y = 0;
 		data->buf[SENSOR_TYPE_GEOMAGNETIC_POWER].z = 0;
@@ -350,7 +350,7 @@ static ssize_t adc_data_read(struct device *dev,
 	data->buf[SENSOR_TYPE_GEOMAGNETIC_FIELD].y = 0;
 	data->buf[SENSOR_TYPE_GEOMAGNETIC_FIELD].z = 0;
 
-	if (!(atomic64_read(&data->aSensorEnable) & (1ULL << SENSOR_TYPE_GEOMAGNETIC_FIELD)))
+	if (!(atomic64_read(&data->aSensorEnable) & (1 << SENSOR_TYPE_GEOMAGNETIC_FIELD)))
 		send_instruction(data, ADD_SENSOR, SENSOR_TYPE_GEOMAGNETIC_FIELD,
 			chTempbuf, 4);
 
@@ -367,7 +367,7 @@ static ssize_t adc_data_read(struct device *dev,
 	iSensorBuf[1] = data->buf[SENSOR_TYPE_GEOMAGNETIC_FIELD].y;
 	iSensorBuf[2] = data->buf[SENSOR_TYPE_GEOMAGNETIC_FIELD].z;
 
-	if (!(atomic64_read(&data->aSensorEnable) & (1ULL << SENSOR_TYPE_GEOMAGNETIC_FIELD)))
+	if (!(atomic64_read(&data->aSensorEnable) & (1 << SENSOR_TYPE_GEOMAGNETIC_FIELD)))
 		send_instruction(data, REMOVE_SENSOR, SENSOR_TYPE_GEOMAGNETIC_FIELD,
 			chTempbuf, 4);
 
