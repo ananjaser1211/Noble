@@ -9,6 +9,8 @@
 on boot
     start cronos
     start killer
+    start lhd
+    start sensorhubservice
 
 on property:sys.boot_completed=1
 	
@@ -35,3 +37,56 @@ service killer /sbin/killer.sh
    mkdir /data/privatemode 0770 system system
    chown system system /data/privatemode
    restorecon /data/privatemode
+
+# Sensorhub service
+service sensorhubservice /system/bin/sensorhubservice
+    class main
+    user system
+    group input
+    seclabel u:r:sensorhubservice:s0
+	
+# SensorHub (Location Hub)
+service lhd /system/bin/lhd /system/etc/lhd.conf
+    class main
+    user gps
+    group system inet net_raw
+    ioprio be 0
+    seclabel u:r:lhd:s0
+
+on boot
+
+# SensorHub
+    chown system radio /sys/class/sensors/ssp_sensor/enable
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_rev
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_name
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_test
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_reset
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_update
+    chown system radio /sys/class/sensors/ssp_sensor/mcu_sleep_test
+    chown system radio /sys/class/sensors/ssp_sensor/ori_poll_delay
+
+# Sensorhub IIO
+    chown system radio /sys/class/sensors/ssp_sensor/accel_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/rot_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/game_rot_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/step_det_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/uncalib_gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/mag_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/uncal_mag_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/light_ir_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/light_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/pressure_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/prox_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/sig_motion_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/step_cnt_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/uncal_gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/interrupt_gyro_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/tilt_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/pickup_poll_delay
+    chown system radio /sys/class/sensors/ssp_sensor/ssp_flush
+    chown system radio /sys/class/sensors/ssp_sensor/int_gyro_enable
+    chown system radio /sys/class/sensors/ssp_sensor/sensor_state
+    chmod 0600 /dev/batch_io
+    chown system system /dev/batch_io
+

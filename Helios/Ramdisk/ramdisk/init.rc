@@ -1672,23 +1672,3 @@ on property:sys.sf.restart=1
 
 on property:security.knox_ucs_mode=reset
     start ucs_reset
-	
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
-    class main
-    user system
-    group input	
-
-# SensorHub (Location Hub)
-service lhd /vendor/bin/lhd /system/vendor/etc/sensor/lhd.conf
-    class main
-    user gps
-    group system inet net_raw
-    ioprio be 0
-	
-#LEGACY SensorHub (Location Hub)
-service lhd /system/bin/lhd /system/etc/lhd.conf
-    class main
-    user gps
-    group system inet net_raw
-    ioprio be 0
