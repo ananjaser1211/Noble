@@ -45,3 +45,4 @@ service gpsd /vendor/bin/hw/gpsd -c /system/vendor/etc/gnss/gps.xml
     group system inet net_raw wakelock
     ioprio be 0
     seclabel u:r:gpsd:s0
+setenv LD_PRELOAD "system/lib64/libsensor.so"
