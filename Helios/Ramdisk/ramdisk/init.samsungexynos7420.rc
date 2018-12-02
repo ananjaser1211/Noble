@@ -5,6 +5,7 @@ import init.baseband.rc
 import init.carrier.rc
 import init.fac.rc
 import init.exynos7420_fac.rc
+import init.gps.rc
 
 on early-init
     mount debugfs /sys/kernel/debug /sys/kernel/debug
@@ -56,7 +57,7 @@ on post-fs-data
     chown audioserver system /data/firmware
 
     # Permissions Camera
-    mkdir /data/camera 0770 media system
+    mkdir /data/camera 0770 cameraserver system
     chown system radio /sys/class/camera/rear/rear_camfw
     chown system radio /sys/class/camera/rear/rear_camfw_full
     chown system radio /sys/class/camera/rear/rear_checkfw_user
@@ -71,7 +72,7 @@ on post-fs-data
     chown system radio /sys/class/camera/rear/from_write
     chown system radio /sys/class/camera/rear/rear_moduleid
     chown system radio /sys/class/camera/flash/rear_flash
-    chown media system /sys/class/camera/flash/rear_torch_flash
+    chown cameraserver system /sys/class/camera/flash/rear_torch_flash
     chown system radio /sys/class/camera/front/front_camfw
     chown system radio /sys/class/camera/front/front_camfw_full
     chown system radio /sys/class/camera/front/front_checkfw_factory
@@ -119,6 +120,13 @@ on post-fs-data
    chown system radio /sys/class/power_supply/battery/batt_discharging_ntc_adc
    chown system radio /sys/class/power_supply/battery/batt_self_discharging_control
    chown system radio /sys/class/power_supply/battery/batt_inbat_wireless_cs100
+
+#Private Mode
+    mkdir /mnt/shell/privatemode 0700 system system
+    mkdir /storage/Private 0000 system system
+    mkdir /data/privatemode 0770 system system
+    chown system system /data/privatemode
+    restorecon /data/privatemode
 
 #NFC : create data/nfc for nv storage
     mkdir /data/nfc 0700 nfc nfc
@@ -174,11 +182,11 @@ on boot
     chmod 664 /sys/devices/platform/exynos7-devfreq-isp/devfreq/exynos7-devfreq-isp/max_freq
 
     chown radio system /sys/devices/14ac0000.mali/dvfs_table
-    chmod 664 /sys/devices/14ac0000.mali/dvfs_table
+    chmod 0664 /sys/devices/14ac0000.mali/dvfs_table
     chown radio system /sys/devices/14ac0000.mali/dvfs_min_lock
-    chmod 664 /sys/devices/14ac0000.mali/dvfs_min_lock
+    chmod 0664 /sys/devices/14ac0000.mali/dvfs_min_lock
     chown radio system /sys/devices/14ac0000.mali/dvfs_max_lock
-    chmod 664 /sys/devices/14ac0000.mali/dvfs_max_lock
+    chmod 0664 /sys/devices/14ac0000.mali/dvfs_max_lock
 
     chown radio system /sys/devices/system/sec_os_ctrl/migrate_os
     chmod 664 /sys/devices/system/sec_os_ctrl/migrate_os
@@ -359,7 +367,7 @@ on boot
     chmod 0770 /system/bin/rtc_log.sh
     chown system system /system/bin/rtc_log.sh
 
-    chown bluetooth bluetooth /dev/ttySAC4
+    chown bluetooth net_bt_stack /dev/ttySAC4
     chmod 0660 /dev/ttySAC4
 # mobicore
     chmod 0660 /dev/t-base-tui
@@ -393,14 +401,40 @@ on boot
 	# MSP FactoryApp
 	mkdir /efs/FactoryApp 0775 system system
 
+# FactoryApp(SensorHub)
+    chown system system /efs/FactoryApp/version
+    chown system system /efs/FactoryApp/predefine0
+    chown system system /efs/FactoryApp/predefine1
+    chown system system /efs/FactoryApp/predefine2
+    chown system system /efs/FactoryApp/predefine3
+    chown system system /efs/FactoryApp/predefine4
+    chown system system /efs/FactoryApp/predefine5
+    chown system system /efs/FactoryApp/predefine6
+    chown system system /efs/FactoryApp/predefine7
+    chown system system /efs/FactoryApp/predefine8
+    chown system system /efs/FactoryApp/predefine9
+    chown system system /efs/FactoryApp/predefine10
+    chown system system /efs/FactoryApp/predefine11
+    chown system system /efs/FactoryApp/predefine12
+    chown system system /efs/FactoryApp/predefine13
+    chown system system /efs/FactoryApp/predefine14
+    chown system system /efs/FactoryApp/predefine15
+    chown system system /efs/FactoryApp/baro_delta
+    chown root system /efs/FactoryApp/gyro_cal_data
+    chown root system /efs/FactoryApp/mag_cal_param
+    chown system system /efs/FactoryApp/hrm_osc_trim
+    chmod 0644 /efs/FactoryApp/hrm_osc_trim
+
 # permissions for bluetooth.
     setprop ro.bt.bdaddr_path "/efs/bluetooth/bt_addr"
-    chown bluetooth bluetooth ro.bt.bdaddr_path
-    chown radio bluetooth /efs/bluetooth/bt_addr
+    chown bluetooth net_bt_stack ro.bt.bdaddr_path
+    chown radio net_bt_stack /efs/bluetooth/bt_addr
     chmod 0640 /efs/bluetooth/bt_addr
+    chown bluetooth bluetooth /dev/ttySAC4
+    chmod 0660 /dev/ttySAC4
     chmod 0660 /sys/class/rfkill/rfkill0/state
-    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
-    chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
+    chown bluetooth net_bt_stack /sys/class/rfkill/rfkill0/state
+    chown bluetooth net_bt_stack /sys/class/rfkill/rfkill0/type
 
 #for datarouter
     chown system system /dev/dun
@@ -425,6 +459,26 @@ on boot
 on fs
     mount_all /fstab.samsungexynos7420
     setprop ro.crypto.fuse_sdcard true
+    #For Absolute Persistence Partition
+    mkdir /persdata 0755 system system
+    mkdir /persdata/absolute 0750 system system
+
+    wait /dev/block/platform/15570000.ufs/by-name/PERSDATA
+    mount ext4 /dev/block/platform/15570000.ufs/by-name/PERSDATA /persdata/absolute nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit,errors=panic
+
+    chown system system /persdata
+    chmod 0755 /persdata
+    chown system system /persdata/absolute
+    chmod 0750 /persdata/absolute
+
+    #For SBFS partition
+    mkdir /sbfs 0755 system system
+    wait /dev/block/platform/15570000.ufs/by-name/SBFS
+    check_fs /dev/block/platform/15570000.ufs/by-name/SBFS ext4
+    mount ext4 /dev/block/platform/15570000.ufs/by-name/SBFS /sbfs nosuid nodev barrier=1
+
+    chown system system /sbfs
+    chmod 0755 /sbfs
 
 # Permissions for TouchScreen
     chown system radio /sys/class/sec/tsp/cmd
@@ -443,14 +497,29 @@ on fs
     chown system radio /sys/class/sec/sec_touchkey/boost_level
     chown system system /sys/class/sec/sec_touchkey/input/enabled
 
+# Permissions for epen
+    chown system radio /sys/class/sec/sec_epen/epen_firm_update
+    chown system radio /sys/class/sec/sec_epen/epen_reset
+    chown system radio /sys/class/sec/sec_epen/epen_reset_result
+    chown system radio /sys/class/sec/sec_epen/epen_checksum
+    chown system radio /sys/class/sec/sec_epen/epen_checksum_result
+    chown system radio /sys/class/sec/sec_epen/epen_saving_mode
+    chown system radio /sys/class/sec/sec_epen/boost_level
+    chown system radio /sys/class/sec/sec_epen/epen_wcharging_mode
+    chown system system /sys/class/sec/sec_epen/input/enabled
+
 # Permissions for gpio_keys
     chown radio system /sys/class/sec/sec_key/wakeup_keys
     write /sys/class/sec/sec_key/wakeup_keys 116,172
+
+# Permissions for hall
+    chown system radio /sys/class/sec/sec_key/hall_irq_ctrl
 
 # Permissions for input_booster
     chown system radio /sys/class/input_booster/level
     chown system radio /sys/class/input_booster/head
     chown system radio /sys/class/input_booster/tail
+    chown system radio /sys/class/input_booster/touch/control
 
 # Permissions for EFS
     chown radio system /efs
@@ -474,31 +543,44 @@ on fs
 # Permissions for backlight
     chown system system /sys/class/backlight/panel/brightness
 
-# Permissions for LCD HMT
-    chown system system /sys/class/lcd/panel/hmt_on
-    chown system system /sys/class/lcd/panel/hmt_bright
-    chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
-
 # Permissions for LCD
     chown system radio /sys/class/lcd/panel/manufacture_code
     chown system radio /sys/class/lcd/panel/lcd_type
     chown system system /sys/class/lcd/panel/siop_enable
     chown system system /sys/class/lcd/panel/temperature
     chown system system /sys/class/lcd/panel/lux
-    chown system system /sys/class/lcd/panel/alpm
     chown system media_rw /sys/class/lcd/panel/adaptive_control
+
+# Permissions for LCD HMT
+    chown system system /sys/class/lcd/panel/hmt_on
+    chown system system /sys/class/lcd/panel/hmt_bright
+    chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
+
+# Permissions for LCD ALPM
+    chown system system /sys/class/lcd/panel/alpm
 
 # Permissions for MDNIE
     chown system media_rw /sys/class/mdnie/mdnie/mode
     chown system media_rw /sys/class/mdnie/mdnie/scenario
     chown system system /sys/class/mdnie/mdnie/accessibility
     chown system system /sys/class/mdnie/mdnie/sensorRGB
+    chown system system /sys/class/mdnie/mdnie/mdnie_ldu
+    chown system system /sys/class/mdnie/mdnie/night_mode
+# Permissions for ISDBT 
+    chown system system /dev/isdbt 
+    chmod 0660 /dev/isdbt
 
 # Permissions for System LSI NFC
 # NFC : Permissions for NFC
     chmod 0660 /dev/sec-nfc
+    chmod 0660 /dev/sec-nfc-fn
+    chmod 0660 /dev/felica_ant
+    chmod 0660 /dev/ttySAC0
 # NFC : change owner
     chown nfc nfc /dev/sec-nfc
+    chown nfc nfc /dev/sec-nfc-fn
+    chown nfc nfc /dev/felica_ant
+    chown nfc nfc /dev/ttySAC0
 
 # Permissions for NXP NFC
 # NFC : Permissions for NFC
@@ -651,6 +733,7 @@ on fs
     chown system radio /sys/class/sensors/ssp_sensor/uncalib_gyro_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/mag_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/uncal_mag_poll_delay
+	chown system radio /sys/class/sensors/ssp_sensor/light_ir_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/light_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/pressure_poll_delay
     chown system radio /sys/class/sensors/ssp_sensor/prox_poll_delay
@@ -678,7 +761,6 @@ on fs
     chown system radio /sys/class/sensors/irled_remote/vendor
     chown system radio /sys/class/sensors/irled_remote/irled_send
     chown system radio /sys/class/sensors/irled_remote/irled_send_result
-
 # GPS
     chown root system /dev/ttySAC0
     chmod 0660 /dev/ttySAC0
@@ -714,7 +796,7 @@ service DIAG-daemon /system/bin/diagexe
     group system radio inet net_raw
 
 # ARGOSD
-service argos-daemon /vendor/bin/argosd
+service argos-daemon /system/vendor/bin/argosd
     class main
     user system
     group system radio
@@ -775,10 +857,7 @@ on property:ro.use_data_netmgrd=true
 
 # LPM
 on property:ro.bootmode=charger
-    wait /dev/block/platform/15570000.ufs/by-name/EFS
-    check_fs /dev/block/platform/15570000.ufs/by-name/EFS ext4
-    mount ext4 /dev/block/platform/15570000.ufs/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
-    mount ext4 /dev/block/platform/15570000.ufs/by-name/SYSTEM /system support_scfs wait ro
+    mount ext4 /dev/block/platform/15570000.ufs/by-name/SYSTEM /system wait ro
 
 on property:ro.bootmode=charger
     class_start sec-charger
@@ -881,20 +960,30 @@ on property:sys.boot_completed=1
 on property:security.semdaemonfinish=1
     stop sem_daemon
 
+# IPSec for VOLTE
+    chown root system /dev/socket
+    chmod 0775 /dev/socket
+
+# IPSec for VOLTE
+service ipsec-daemon /system/bin/IPSecService
+    class main
+    socket ipsec_socket stream 660 system system
+    user system
+    group system net_raw inet net_admin
 
 # On-Board DM
 service DMM-deamon /system/bin/dmm_v2
     class main
     user root
     group root system radio inet net_raw
-    
-# GPS
-service gpsd /vendor/bin/hw/gpsd -c /vendor/etc/gnss/gps.xml
-    class main
-    user gps
-    group system inet net_raw wakelock
-    ioprio be 0
-    seclabel u:r:gpsd:s0
+
+# Blowfish tzdaemon
+service tz_service /system/bin/tzdaemon
+    class core
+    socket tz stream 0666 system system
+    user system
+    group system
+    disabled
 
 # WSM
 service wsmd /system/bin/wsmd
@@ -903,7 +992,7 @@ service wsmd /system/bin/wsmd
     group system
     disabled
 on property:ro.wsmd.enable=true
-    mkdir /dev/socket/wsm_socket 
+    mkdir /dev/socket/wsm_socket
     chmod 0711 /dev/socket/wsm_socket
     chown system system /dev/socket/wsm_socket
     start wsmd

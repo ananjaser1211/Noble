@@ -41,11 +41,14 @@ ro.bootimage.build.date=Mon Sep 3 20:02:50 KST 2018
 ro.bootimage.build.date.utc=1535972570
 ro.bootimage.build.fingerprint=samsung/a8xeltejt/a8xelte:8.0.0/R16NW/A810FXXU2CRH7:user/test-keys
 # Helios Tweaks
+wlan.wfd.hdcp=disable
 ro.config.tima=0
 ro.security.vaultkeeper.feature=0
 ro.frp.pst=
 ro.securestorage.support=false
 ro.config.dmverity=false
 ro.config.rkp=false
+security.knox_kap_mode=false
+ro.config.kap_default_on=false
 ro.config.kap=false
 ro.config.tima=0

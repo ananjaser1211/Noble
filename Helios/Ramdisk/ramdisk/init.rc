@@ -87,7 +87,7 @@ on init
     restorecon_recursive /mnt
 
     mount configfs none /config
-    chmod 0774 /config/sdcardfs
+    chmod 0775 /config/sdcardfs
     chown system package_info /config/sdcardfs
 
     mkdir /mnt/secure 0700 root root
@@ -115,6 +115,7 @@ on init
     mkdir /mnt/appfuse 0711 root root
 
     # Storage views to support runtime permissions
+    mkdir /storage 0755 root root
     mkdir /mnt/runtime 0700 root root
     mkdir /mnt/runtime/default 0755 root root
     mkdir /mnt/runtime/default/self 0755 root root
@@ -737,6 +738,10 @@ on zygote-start && property:ro.crypto.state=encrypted && property:ro.crypto.type
     start zygote_secondary
 
 on boot
+	#Sensorservice
+	start lhd
+	start sensorhubservice
+
     #knox_kap
     chown system system /dev/knox_kap
     chmod 0644 /dev/knox_kap
@@ -1670,3 +1675,23 @@ on property:sys.sf.restart=1
 
 on property:security.knox_ucs_mode=reset
     start ucs_reset
+	
+# Sensorhub service
+service sensorhubservice /system/bin/sensorhubservice
+    class main
+    user system
+    group input	
+
+# SensorHub (Location Hub)
+service lhd /vendor/bin/lhd /system/vendor/etc/sensor/lhd.conf
+    class main
+    user gps
+    group system inet net_raw
+    ioprio be 0
+	
+#LEGACY SensorHub (Location Hub)
+service lhd /system/bin/lhd /system/etc/lhd.conf
+    class main
+    user gps
+    group system inet net_raw
+    ioprio be 0
