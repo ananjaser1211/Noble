@@ -1445,10 +1445,6 @@ static irqreturn_t fts_interrupt_handler(int irq, void *handle)
 	struct fts_ts_info *info = handle;
 	unsigned char regAdd[4] = {0xb6, 0x00, 0x45, READ_ALL_EVENT};
 	unsigned short evtcount = 0;
-
-	/* prevent CPU from entering deep sleep */
-	pm_qos_update_request(&info->pm_qos_req, 100);
-
 #ifdef FTS_SUPPORT_SIDE_GESTURE
 	if ((info->board->support_sidegesture) &&
 		(info->fts_power_state == FTS_POWER_STATE_LOWPOWER)) {
@@ -1473,8 +1469,6 @@ static irqreturn_t fts_interrupt_handler(int irq, void *handle)
 		(info->fts_power_state == FTS_POWER_STATE_LOWPOWER))
 		pm_relax(info->input_dev->dev.parent);
 #endif
-
-	pm_qos_update_request(&info->pm_qos_req, PM_QOS_DEFAULT_VALUE);
 
 	return IRQ_HANDLED;
 }
@@ -2026,9 +2020,6 @@ static int fts_probe(struct i2c_client *client, const struct i2c_device_id *idp)
 		goto err_enable_irq;
 	}
 
-	pm_qos_add_request(&info->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
-			PM_QOS_DEFAULT_VALUE);
-
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
 	trustedui_set_tsp_irq(info->irq);
 	tsp_debug_info(true, &client->dev, "%s[%d] called!\n",
@@ -2192,8 +2183,6 @@ static int fts_remove(struct i2c_client *client)
 	info->input_dev = NULL;
 
 	info->board->power(info, false);
-
-	pm_qos_remove_request(&info->pm_qos_req);
 
 	kfree(info);
 
