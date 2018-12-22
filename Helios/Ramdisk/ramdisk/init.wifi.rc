@@ -66,7 +66,7 @@ on post-fs-data
     # for WIFI MAC address
     mkdir /efs/wifi 0775 radio system
     chown system wifi /efs/wifi/.mac.info
-    chmod 0660 /efs/wifi/.mac.info
+    chmod 0666 /efs/wifi/.mac.info
 
     # for WIFI hotspot
     write /data/misc/conn/.softap.info 0
@@ -75,9 +75,9 @@ on post-fs-data
     chmod 0664 /vendor/etc/wifi/indoorchannel.info
     chown system wifi /vendor/etc/wifi/indoorchannel.info
 
-    # Set permissions for firmware path control
-    chown wifi wifi /sys/module/dhd/parameters/firmware_path
-    chmod 0660 /sys/module/dhd/parameters/firmware_path
+    # for fwpath
+    chown wifi wifi /sys/module/wlan/parameters/fwpath
+
 	
 on boot
     setprop wifi.interface wlan0
@@ -104,7 +104,7 @@ service mfgloader /system/vendor/bin/hw/mfgloader
 service wlandutservice /system/bin/wlandutservice
     class main
     user system
-    group system wifi net_raw net_admin inet
+    group wifi net_raw net_admin system inet
     disabled
     oneshot
 

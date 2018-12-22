@@ -46,7 +46,7 @@ service sensorhubservice /system/bin/sensorhubservice
     seclabel u:r:sensorhubservice:s0
 	
 # SensorHub (Location Hub)
-service lhd /system/bin/lhd /system/etc/lhd.conf
+service lhd /system/vendor/bin/hw/lhd /system/vendor/etc/sensor/lhd.conf
     class main
     user gps
     group system inet net_raw
