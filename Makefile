@@ -243,7 +243,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       =$(CCACHE) gcc
 HOSTCXX      =$(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
 HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
@@ -385,7 +385,26 @@ KBUILD_CFLAGS   := -w -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -fdiagnostics-show-option -Werror
+		   -fdiagnostics-show-option -Werror \
+		   -Ofast \
+		   -std=gnu89
+# Linaro
+KBUILD_CFLAGS += \
+	-Wno-array-bounds \
+	-Wno-bool-operation \
+	-Wno-discarded-array-qualifiers \
+	-Wno-int-in-bool-context \
+	-Wno-format-overflow \
+	-Wno-format-truncation \
+	-Wno-logical-not-parentheses \
+	-Wno-memset-elt-size \
+	-Wno-misleading-indentation \
+	-Wno-nonnull \
+	-Wno-switch-unreachable \
+	-Wno-switch-bool \
+	-Wno-tautological-compare \
+	-Wno-unused-const-variable
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -601,11 +620,7 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
-KBUILD_CFLAGS	+= -O2
-endif
+KBUILD_CFLAGS	+= -mcpu=cortex-a57.cortex-a53+crc+crypto
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
