@@ -16,8 +16,7 @@ on init
     write /proc/sys/net/core/netdev_max_backlog 5000
 
 on fs
-    chown radio system /efs
-    chmod 0771 /efs
+# MIF
     chown radio radio sys/devices/virtual/misc/multipdp/waketime
     chmod 0660 /sys/devices/virtual/misc/umts_dm0/dm_state
     chown radio system /sys/devices/virtual/misc/umts_dm0/dm_state

@@ -32,7 +32,7 @@ elif [ -f /data/adb/magisk/magisk.apk ]; then
 	rm /data/magisk.apk
 fi;
 
-if [ -z "$(ls -A /data/dalvik-cache/arm)" ]; then
+if [ -z "$(ls -A /data/dalvik-cache/arm64)" ]; then
    sleep 1
    reboot
 fi;

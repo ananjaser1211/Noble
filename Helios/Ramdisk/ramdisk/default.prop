@@ -12,7 +12,6 @@ persist.sys.usb.config=mtp,adb
 ro.zygote=zygote64_32
 ro.telephony.default_network=9
 ro.supportmodel.mptcp=1
-ro.multisim.simslotcount=1
 ro.radio.noril=no
 ro.telephony.default_cdma_sub=0
 dalvik.vm.image-dex2oat-Xms=64m
@@ -29,19 +28,13 @@ pm.dexopt.boot=verify
 pm.dexopt.install=quicken
 pm.dexopt.bg-dexopt=speed-profile
 pm.dexopt.ab-ota=speed-profile
-pm.dexopt.inactive=verify
-pm.dexopt.shared=speed
 debug.atrace.tags.enableflags=0
-# ADB Insecure
-persist.service.adb.enable=1
-persist.service.debuggable=1
-persist.adb.notify=0
 #
 # BOOTIMAGE_BUILD_PROPERTIES
 #
-ro.bootimage.build.date=Tue Nov 6 12:14:35 KST 2018
-ro.bootimage.build.date.utc=1541474075
-ro.bootimage.build.fingerprint=samsung/crownltexx/crownlte:8.1.0/M1AJQ/N960FXXS2ARK3:user/release-keys
+ro.bootimage.build.date=Wed Nov 14 15:52:37 KST 2018
+ro.bootimage.build.date.utc=1542178357
+ro.bootimage.build.fingerprint=samsung/gracerltexx/gracerlte:8.0.0/R16NW/N935FXXS4BRK2:user/test-keys
 # Helios Tweaks
 wlan.wfd.hdcp=disable
 ro.config.tima=0
@@ -54,3 +47,7 @@ security.knox_kap_mode=false
 ro.config.kap_default_on=false
 ro.config.kap=false
 ro.config.tima=0
+# ADB Insecure
+persist.service.adb.enable=1
+persist.service.debuggable=1
+persist.adb.notify=0
