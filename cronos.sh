@@ -18,7 +18,7 @@
 
 # Directory Contol
 CR_DIR=$(pwd)
-CR_TC=/home/elite_aj1211/Android/Toolchains/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+CR_TC=/home/elite_aj1211/Android/Toolchains/gcc-linaro-6.1.1-2016.08-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 CR_DTS=arch/arm64/boot/dts
 CR_OUT=$CR_DIR/Helios/Out
 CR_AIK=$CR_DIR/Helios/A.I.K
