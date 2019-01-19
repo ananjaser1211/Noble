@@ -13,6 +13,9 @@ on boot
     start sensorhubservice
 
 on property:sys.boot_completed=1
+
+   # Restore Stock Max GPU Freq
+   write /sys/devices/14ac0000.mali/dvfs_max_lock 700
 	
 on post-fs-data
 
@@ -37,21 +40,6 @@ service killer /sbin/killer.sh
    mkdir /data/privatemode 0770 system system
    chown system system /data/privatemode
    restorecon /data/privatemode
-
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
-    class main
-    user system
-    group input
-    seclabel u:r:sensorhubservice:s0
-	
-# SensorHub (Location Hub)
-service lhd /system/bin/lhd /system/etc/lhd.conf
-    class main
-    user gps
-    group system inet net_raw
-    ioprio be 0
-    seclabel u:r:lhd:s0
 
 on boot
 
