@@ -26,7 +26,7 @@ CR_RAMDISK=$CR_DIR/Helios/Ramdisk
 CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
 CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Variables
-CR_VERSION=V1.0
+CR_VERSION=V1.5
 CR_NAME=Helios_Kernel
 CR_JOBS=5
 CR_ANDROID=o
@@ -39,14 +39,22 @@ export ANDROID_MAJOR_VERSION=$CR_ANDROID
 export PLATFORM_VERSION=$CR_PLATFORM
 export $CR_ARCH
 ##########################################
-# Device specific Variables [SM-N920C]
+# Device specific Variables [SM-N920CIGSLK]
 CR_DTSFILES_N920C="exynos7420-noblelte_eur_open_00.dtb exynos7420-noblelte_eur_open_01.dtb exynos7420-noblelte_eur_open_02.dtb exynos7420-noblelte_eur_open_03.dtb exynos7420-noblelte_eur_open_04.dtb exynos7420-noblelte_eur_open_05.dtb exynos7420-noblelte_eur_open_06.dtb exynos7420-noblelte_eur_open_08.dtb exynos7420-noblelte_eur_open_09.dtb"
 CR_CONFG_N920C=exynos7420-noblelte_defconfig
 CR_VARIANT_N920C=N920C
-# Device specific Variables [SM-]
-CR_DTSFILES_=""
-CR_CONFG_=
-CR_VARIANT_=
+# Device specific Variables [SM-G920X]
+CR_DTSFILES_G920X="exynos7420-zeroflte_eur_open_00.dtb exynos7420-zeroflte_eur_open_01.dtb exynos7420-zeroflte_eur_open_02.dtb exynos7420-zeroflte_eur_open_03.dtb exynos7420-zeroflte_eur_open_04.dtb exynos7420-zeroflte_eur_open_05.dtb exynos7420-zeroflte_eur_open_06.dtb exynos7420-zeroflte_eur_open_07.dtb"
+CR_CONFG_G920X=zeroflte_defconfig
+CR_VARIANT_G920X=G920X
+# Device specific Variables [SM-G925X]
+CR_DTSFILES_G925X="exynos7420-zerolte_eur_open_01.dtb exynos7420-zerolte_eur_open_02.dtb exynos7420-zerolte_eur_open_03.dtb exynos7420-zerolte_eur_open_04.dtb exynos7420-zerolte_eur_open_05.dtb exynos7420-zerolte_eur_open_06.dtb exynos7420-zerolte_eur_open_07.dtb exynos7420-zerolte_eur_open_08.dtb"
+CR_CONFG_G925X=zerolte_defconfig
+CR_VARIANT_G925X=G925X
+# Device specific Variables [SM-G928X]
+CR_DTSFILES_G928X="exynos7420-zenlte_eur_open_00.dtb exynos7420-zenlte_eur_open_09.dtb"
+CR_CONFG_G928X=zenlte_defconfig
+CR_VARIANT_G928X=G928X
 #####################################################
 
 # Script functions
@@ -81,10 +89,6 @@ BUILD_DTB()
 	echo "----------------------------------------------"
 	echo " "
 	echo "Building DTB for $CR_VARIANT"
-	export $CR_ARCH
-	export CROSS_COMPILE=$CR_TC
-	export ANDROID_MAJOR_VERSION=$CR_ANDROID
-	make  $CR_CONFG
 	make $CR_DTSFILES
 	./scripts/dtbTool/dtbTool -o ./boot.img-dtb -d $CR_DTS/ -s 2048
 	du -k "./boot.img-dtb" | cut -f1 >sizT
@@ -115,8 +119,8 @@ clear
 echo "----------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "----------------------------------------------"
-PS3='Please select your option (1-2): '
-menuvar=("SM-N920C" "Exit")
+PS3='Please select your option (1-5): '
+menuvar=("SM-N920C" "SM-G920X" "SM-G925X" "SM-G928X" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
@@ -127,6 +131,66 @@ do
             CR_VARIANT=$CR_VARIANT_N920C
             CR_CONFG=$CR_CONFG_N920C
             CR_DTSFILES=$CR_DTSFILES_N920C
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G920X")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_G920X kernel build..."
+            CR_VARIANT=$CR_VARIANT_G920X
+            CR_CONFG=$CR_CONFG_G920X
+            CR_DTSFILES=$CR_DTSFILES_G920X
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G925X")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_G925X kernel build..."
+            CR_VARIANT=$CR_VARIANT_G925X
+            CR_CONFG=$CR_CONFG_G925X
+            CR_DTSFILES=$CR_DTSFILES_G925X
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $sizT Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G928X")
+            clear
+            CLEAN_SOURCE
+            echo "Starting $CR_VARIANT_G928X kernel build..."
+            CR_VARIANT=$CR_VARIANT_G928X
+            CR_CONFG=$CR_CONFG_G928X
+            CR_DTSFILES=$CR_DTSFILES_G928X
             BUILD_ZIMAGE
             BUILD_DTB
             PACK_BOOT_IMG
