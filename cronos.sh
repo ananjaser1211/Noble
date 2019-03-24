@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Cronos Build Script
+# Cronos Build Script V3.0
 # For Exynos7420
-# Coded by BlackMesa/AnanJaser1211 @2018
+# Coded by BlackMesa/AnanJaser1211 @2019
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -16,25 +16,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Directory Contol
+# Main Dir
 CR_DIR=$(pwd)
-CR_TC=/home/elite_aj1211/Android/Toolchains/gcc-linaro-6.1.1-2016.08-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+# Define toolchan path
+CR_TC=~/Android/Toolchains/linaro-7.4.1-aarch64-linux/bin/aarch64-linux-gnu-
+# Define proper arch and dir for dts files
 CR_DTS=arch/arm64/boot/dts
+# Define boot.img out dir
 CR_OUT=$CR_DIR/Helios/Out
+# Presistant A.I.K Location
 CR_AIK=$CR_DIR/Helios/A.I.K
+# Main Ramdisk Location
 CR_RAMDISK=$CR_DIR/Helios/Ramdisk
+CR_RAMDISK_TREBLE=$CR_DIR/Helios/Treble
+# Compiled image name and location (Image/zImage)
 CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
+# Compiled dtb by dtbtool
 CR_DTB=$CR_DIR/boot.img-dtb
-# Kernel Variables
+# Kernel Name and Version
 CR_VERSION=V1.5
 CR_NAME=Helios_Kernel
+# Thread count
 CR_JOBS=5
+# Target android version and platform (7/n/8/o/9/p)
 CR_ANDROID=o
 CR_PLATFORM=8.0.0
+# Target ARCH
 CR_ARCH=arm64
+# Current Date
 CR_DATE=$(date +%Y%m%d)
 # Init build
 export CROSS_COMPILE=$CR_TC
+# General init
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 export PLATFORM_VERSION=$CR_PLATFORM
 export $CR_ARCH
@@ -58,21 +71,23 @@ CR_VARIANT_G928X=G928X
 #####################################################
 
 # Script functions
-CLEAN_SOURCE()
-{
-echo "----------------------------------------------"
-echo " "
-echo "Cleaning"
-#make clean
-#make mrproper
-# rm -r -f $CR_OUT/*
-rm -r -f $CR_DTB
-rm -rf $CR_DTS/.*.tmp
-rm -rf $CR_DTS/.*.cmd
-rm -rf $CR_DTS/*.dtb
-echo " "
-echo "----------------------------------------------"	
-}
+
+read -p "Clean source (y/n) > " yn
+if [ "$yn" = "Y" -o "$yn" = "y" ]; then
+     echo "Clean Build"    
+     make clean && make mrproper    
+     rm -r -f $CR_DTB
+     rm -rf $CR_DTS/.*.tmp
+     rm -rf $CR_DTS/.*.cmd
+     rm -rf $CR_DTS/*.dtb      
+else
+     echo "Dirty Build"
+     rm -r -f $CR_DTB
+     rm -rf $CR_DTS/.*.tmp
+     rm -rf $CR_DTS/.*.cmd
+     rm -rf $CR_DTS/*.dtb          
+fi
+
 BUILD_ZIMAGE()
 {
 	echo "----------------------------------------------"
@@ -81,6 +96,11 @@ BUILD_ZIMAGE()
 	export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE
 	make  $CR_CONFG
 	make -j$CR_JOBS
+	if [ ! -e ./arch/arm64/boot/Image ]; then
+	exit 0;
+	echo "zImage Failed to Compile"
+	echo " Abort "
+	fi
 	echo " "
 	echo "----------------------------------------------"
 }
@@ -89,6 +109,8 @@ BUILD_DTB()
 	echo "----------------------------------------------"
 	echo " "
 	echo "Building DTB for $CR_VARIANT"
+	# Use the DTS list provided in the build script.
+	# This source does not compile dtbs while doing Image
 	make $CR_DTSFILES
 	./scripts/dtbTool/dtbTool -o ./boot.img-dtb -d $CR_DTS/ -s 2048
 	du -k "./boot.img-dtb" | cut -f1 >sizT
@@ -107,11 +129,52 @@ PACK_BOOT_IMG()
 	echo " "
 	echo "Building Boot.img for $CR_VARIANT"
 	cp -rf $CR_RAMDISK/* $CR_AIK
+	# To avoid any permission issues
+	echo "Fix Ramdisk Permissions"
+	cd $CR_RAMDISK
+	find -type d -exec chmod 755 {} \;
+	find -type f -exec chmod 644 {} \;
+	find -name "*.rc" -exec chmod 750 {} \;
+	find -name "*.sh" -exec chmod 750 {} \;
+	chmod -Rf 750 init sbin
+	# Copy Ramdisk
+	cp -rf $CR_RAMDISK/* $CR_AIK
+	# Move Compiled kernel and dtb to A.I.K Folder
 	mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
 	mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
+	# Create boot.img
 	$CR_AIK/repackimg.sh
+	# Remove red warning at boot
 	echo -n "SEANDROIDENFORCE" » $CR_AIK/image-new.img
+	# Move boot.img to out dir
 	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_DATE-$CR_VARIANT.img
+	$CR_AIK/cleanup.sh
+}
+PACK_BOOT_IMG_TREBLE()
+{
+	echo "----------------------------------------------"
+	echo " "
+	echo "Building Boot.img for $CR_VARIANT"
+	cp -rf $CR_RAMDISK_TREBLE/* $CR_AIK
+	# To avoid any permission issues
+	echo "Fix Ramdisk Permissions"
+	cd $CR_RAMDISK_TREBLE
+	find -type d -exec chmod 755 {} \;
+	find -type f -exec chmod 644 {} \;
+	find -name "*.rc" -exec chmod 750 {} \;
+	find -name "*.sh" -exec chmod 750 {} \;
+	chmod -Rf 750 init sbin
+	# Copy Ramdisk
+	cp -rf $CR_RAMDISK_TREBLE/* $CR_AIK
+	# Move Compiled kernel and dtb to A.I.K Folder
+	mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
+	mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
+	# Create boot.img
+	$CR_AIK/repackimg.sh
+	# Remove red warning at boot
+	echo -n "SEANDROIDENFORCE" » $CR_AIK/image-new.img
+	# Move boot.img to out dir
+	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_DATE-$CR_VARIANT-Treble.img
 	$CR_AIK/cleanup.sh
 }
 # Main Menu
