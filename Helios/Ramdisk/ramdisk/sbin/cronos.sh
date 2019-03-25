@@ -10,6 +10,29 @@
 #########################################################
 # Wait until all process are up and running
 
+if [ -e /data/helios/Refined_logger.log ]; then
+  cp "/data/helios/Refined_logger.log" "/data/heliosLogcat/Refined_Logger_$(date +"%d-%m-%Y %H:%M:%S").log"
+fi
+
+if [ ! -e /data/helios ]; then
+	mkdir -p /data/helios
+	chown -R root.root /data/helios
+	chmod -R 755 /data/helios
+fi
+
+if [ ! -e /data/heliosLogcat ]; then
+  mkdir -p /data/heliosLogcat
+  chown -R root.root /data/heliosLogcat
+  chmod -R 755 /data/heliosLogcat
+fi
+
+for FILE in /data/helios/*; do
+	$RUN rm -f $FILE
+done;
+
+# RefinedLogger
+/system/bin/logcat *:E > /data/helios/Refined_logger.log
+
 while pgrep bootanimation > /dev/null; do
   sleep 1
 done
