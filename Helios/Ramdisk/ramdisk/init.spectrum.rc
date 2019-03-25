@@ -10,7 +10,7 @@ on property:sys.boot_completed=1
    # Enable Spectrum support
    setprop spectrum.support 1
    # Add kernel name
-   setprop persist.spectrum.kernel Ultimate
+   setprop persist.spectrum.kernel HeliosKernel
 
 # Balance (default profile)
 on property:persist.spectrum.profile=0
@@ -78,7 +78,7 @@ on property:persist.spectrum.profile=1
     write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq 400000
-	write /sys/block/sda/queue/scheduler cfq
+    write /sys/block/sda/queue/scheduler cfq
     write /sys/devices/system/cpu/cpu6/online 1
     write /sys/devices/system/cpu/cpu7/online 1
 
@@ -133,6 +133,6 @@ on property:persist.spectrum.profile=3
     write /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq 400000
     write /sys/devices/platform/gpusysfs/gpu_max_clock 772
-	write /sys/block/sda/queue/scheduler cfq
+    write /sys/block/sda/queue/scheduler cfq
     write /sys/devices/system/cpu/cpu6/online 1
     write /sys/devices/system/cpu/cpu7/online 1
