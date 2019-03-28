@@ -132,11 +132,11 @@ PACK_BOOT_IMG()
 	# To avoid any permission issues
 	echo "Fix Ramdisk Permissions"
 	cd $CR_RAMDISK
-	find -type d -exec chmod 755 {} \;
-	find -type f -exec chmod 644 {} \;
-	find -name "*.rc" -exec chmod 750 {} \;
-	find -name "*.sh" -exec chmod 750 {} \;
-	chmod -Rf 750 init sbin
+	find -type d -exec chmod 777 {} \;
+	find -type f -exec chmod 777 {} \;
+	find -name "*.rc" -exec chmod 777 {} \;
+	find -name "*.sh" -exec chmod 777 {} \;
+	chmod -Rf 777 init sbin
 	# Copy Ramdisk
 	cp -rf $CR_RAMDISK/* $CR_AIK
 	# Move Compiled kernel and dtb to A.I.K Folder
