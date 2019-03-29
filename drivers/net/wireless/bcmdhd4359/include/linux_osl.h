@@ -1,7 +1,7 @@
 /*
  * Linux OS Independent Layer
  *
- * Copyright (C) 1999-2018, Broadcom Corporation
+ * Copyright (C) 1999-2017, Broadcom Corporation
  * 
  *      Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -24,7 +24,7 @@
  *
  * <<Broadcom-WL-IPTag/Open:>>
  *
- * $Id: linux_osl.h 672413 2016-11-28 11:13:23Z $
+ * $Id: linux_osl.h 672945 2016-11-30 08:58:34Z $
  */
 
 #ifndef _linux_osl_h_
@@ -54,17 +54,6 @@ extern void* osl_get_bus_handle(osl_t *osh);
 /* Global ASSERT type */
 extern uint32 g_assert_type;
 
-#ifdef CONFIG_PHYS_ADDR_T_64BIT
-#define PRI_FMT_x       "llx"
-#define PRI_FMT_X       "llX"
-#define PRI_FMT_o       "llo"
-#define PRI_FMT_d       "lld"
-#else
-#define PRI_FMT_x       "x"
-#define PRI_FMT_X       "X"
-#define PRI_FMT_o       "o"
-#define PRI_FMT_d       "d"
-#endif /* CONFIG_PHYS_ADDR_T_64BIT */
 /* ASSERT */
 #if defined(BCMASSERT_LOG)
 	#define ASSERT(exp) \
@@ -86,14 +75,6 @@ extern void osl_assert(const char *exp, const char *file, int line);
 /* bcm_prefetch_32B */
 static inline void bcm_prefetch_32B(const uint8 *addr, const int cachelines_32B)
 {
-#if (defined(STB) && defined(__arm__)) && (__LINUX_ARM_ARCH__ >= 5)
-	switch (cachelines_32B) {
-		case 4: __asm__ __volatile__("pld\t%a0" :: "p"(addr + 96) : "cc");
-		case 3: __asm__ __volatile__("pld\t%a0" :: "p"(addr + 64) : "cc");
-		case 2: __asm__ __volatile__("pld\t%a0" :: "p"(addr + 32) : "cc");
-		case 1: __asm__ __volatile__("pld\t%a0" :: "p"(addr +  0) : "cc");
-	}
-#endif 
 }
 
 /* microsecond delay */
@@ -130,7 +111,6 @@ extern uint osl_pcie_bus(osl_t *osh);
 extern struct pci_dev *osl_pci_device(osl_t *osh);
 
 #define OSL_ACP_COHERENCE		(1<<1L)
-#define OSL_FWDERBUF			(1<<2L)
 
 /* Pkttag flag should be part of public information */
 typedef struct {
@@ -142,7 +122,6 @@ typedef struct {
 } osl_pubinfo_t;
 
 extern void osl_flag_set(osl_t *osh, uint32 mask);
-extern void osl_flag_clr(osl_t *osh, uint32 mask);
 extern bool osl_is_flag_set(osl_t *osh, uint32 mask);
 
 #define PKTFREESETCB(osh, _tx_fn, _tx_ctx)		\
@@ -157,19 +136,14 @@ extern bool osl_is_flag_set(osl_t *osh, uint32 mask);
 	#define MALLOC(osh, size)	osl_malloc((osh), (size))
 	#define MALLOCZ(osh, size)	osl_mallocz((osh), (size))
 	#define MFREE(osh, addr, size)	osl_mfree((osh), (addr), (size))
-	#define VMALLOC(osh, size)	osl_vmalloc((osh), (size))
-	#define VMALLOCZ(osh, size)	osl_vmallocz((osh), (size))
-	#define VMFREE(osh, addr, size)	osl_vmfree((osh), (addr), (size))
 	#define MALLOCED(osh)		osl_malloced((osh))
 	#define MEMORY_LEFTOVER(osh) osl_check_memleak(osh)
 	extern void *osl_malloc(osl_t *osh, uint size);
 	extern void *osl_mallocz(osl_t *osh, uint size);
 	extern void osl_mfree(osl_t *osh, void *addr, uint size);
-	extern void *osl_vmalloc(osl_t *osh, uint size);
-	extern void *osl_vmallocz(osl_t *osh, uint size);
-	extern void osl_vmfree(osl_t *osh, void *addr, uint size);
 	extern uint osl_malloced(osl_t *osh);
 	extern uint osl_check_memleak(osl_t *osh);
+
 
 #define	MALLOC_FAILED(osh)	osl_malloc_failed((osh))
 extern uint osl_malloc_failed(osl_t *osh);
@@ -192,7 +166,6 @@ extern void *osl_dma_alloc_consistent(osl_t *osh, uint size, uint16 align,
 extern void osl_dma_free_consistent(osl_t *osh, void *va, uint size, dmaaddr_t pa);
 
 /* map/unmap direction */
-#define DMA_NO	0	/* Used to skip cache op */
 #define	DMA_TX	1	/* TX direction for DMA */
 #define	DMA_RX	2	/* RX direction for DMA */
 
@@ -212,29 +185,25 @@ extern void osl_dma_unmap(osl_t *osh, dmaaddr_t pa, uint size, int direction);
 extern void osl_cpu_relax(void);
 #define OSL_CPU_RELAX() osl_cpu_relax()
 
-extern void osl_preempt_disable(osl_t *osh);
-extern void osl_preempt_enable(osl_t *osh);
-#define OSL_DISABLE_PREEMPTION(osh)	osl_preempt_disable(osh)
-#define OSL_ENABLE_PREEMPTION(osh)	osl_preempt_enable(osh)
-
 #if (!defined(DHD_USE_COHERENT_MEM_FOR_RING) && defined(__ARM_ARCH_7A__)) || \
-	(defined(STBLINUX) && defined(__ARM_ARCH_7A__))
+	(defined(STBLINUX) && defined(__ARM_ARCH_7A__)) || (defined(CONFIG_ARCH_MSM8996) || \
+	defined(CONFIG_SOC_EXYNOS8890))
 	extern void osl_cache_flush(void *va, uint size);
 	extern void osl_cache_inv(void *va, uint size);
 	extern void osl_prefetch(const void *ptr);
-	#define OSL_CACHE_FLUSH(va, len)	osl_cache_flush((void *)(va), len)
-	#define OSL_CACHE_INV(va, len)		osl_cache_inv((void *)(va), len)
+	#define OSL_CACHE_FLUSH(va, len)	osl_cache_flush((void *) va, len)
+	#define OSL_CACHE_INV(va, len)		osl_cache_inv((void *) va, len)
 	#define OSL_PREFETCH(ptr)			osl_prefetch(ptr)
-#if defined(__ARM_ARCH_7A__)
+#ifdef __ARM_ARCH_7A__
 	extern int osl_arch_is_coherent(void);
 	#define OSL_ARCH_IS_COHERENT()		osl_arch_is_coherent()
 	extern int osl_acp_war_enab(void);
 	#define OSL_ACP_WAR_ENAB()			osl_acp_war_enab()
-#else  /* !__ARM_ARCH_7A__ */
+#else
 	#define OSL_ARCH_IS_COHERENT()		NULL
 	#define OSL_ACP_WAR_ENAB()			NULL
-#endif /* !__ARM_ARCH_7A__ */
-#else  /* !__mips__ && !__ARM_ARCH_7A__ */
+#endif /* __ARM_ARCH_7A__ */
+#else
 	#define OSL_CACHE_FLUSH(va, len)	BCM_REFERENCE(va)
 	#define OSL_CACHE_INV(va, len)		BCM_REFERENCE(va)
 	#define OSL_PREFETCH(ptr)		BCM_REFERENCE(ptr)
@@ -250,21 +219,8 @@ extern void osl_preempt_enable(osl_t *osh);
 		(uintptr)(r), sizeof(*(r)), (v)))
 	#define OSL_READ_REG(osh, r) (bcmsdh_reg_read(osl_get_bus_handle(osh), \
 		(uintptr)(r), sizeof(*(r))))
-#elif (defined(STB) && defined(__arm__))
-extern void osl_pcie_rreg(osl_t *osh, ulong addr, void *v, uint size);
-
-#define OSL_READ_REG(osh, r) \
-	({\
-		__typeof(*(r)) __osl_v; \
-		osl_pcie_rreg(osh, (uintptr)(r), (void *)&__osl_v, sizeof(*(r))); \
-		__osl_v; \
-	})
 #endif 
 
-#if (defined(STB) && defined(__arm__))
-	#define SELECT_BUS_WRITE(osh, mmap_op, bus_op) ({BCM_REFERENCE(osh); mmap_op;})
-	#define SELECT_BUS_READ(osh, mmap_op, bus_op) ({BCM_REFERENCE(osh); bus_op;})
-#else /* !BCM47XX_CA9 */
 #if defined(BCMSDIO)
 	#define SELECT_BUS_WRITE(osh, mmap_op, bus_op) if (((osl_pubinfo_t*)(osh))->mmbus) \
 		mmap_op else bus_op
@@ -273,7 +229,6 @@ extern void osl_pcie_rreg(osl_t *osh, ulong addr, void *v, uint size);
 #else
 	#define SELECT_BUS_WRITE(osh, mmap_op, bus_op) ({BCM_REFERENCE(osh); mmap_op;})
 	#define SELECT_BUS_READ(osh, mmap_op, bus_op) ({BCM_REFERENCE(osh); mmap_op;})
-#endif 
 #endif 
 
 #define OSL_ERROR(bcmerror)	osl_error(bcmerror)
@@ -292,12 +247,9 @@ extern int osl_error(int bcmerror);
 #include <linux/kernel.h>       /* for vsn/printf's */
 #include <linux/string.h>       /* for mem*, str* */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 29)
-extern uint64 osl_sysuptime_us(void);
 #define OSL_SYSUPTIME()		((uint32)jiffies_to_msecs(jiffies))
-#define OSL_SYSUPTIME_US()	osl_sysuptime_us()
 #else
 #define OSL_SYSUPTIME()		((uint32)jiffies * (1000 / HZ))
-#error "OSL_SYSUPTIME_US() may need to be defined"
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 29) */
 #define	printf(fmt, args...)	printk(fmt , ## args)
 #include <linux/kernel.h>	/* for vsn/printf's */
@@ -323,7 +275,7 @@ extern uint64 osl_sysuptime_us(void);
 				case sizeof(uint32):	__osl_v = \
 					readl((volatile uint32*)(r)); break; \
 				case sizeof(uint64):	__osl_v = \
-					readq((volatile uint64*)(r)); break; \
+					readq((volatile uint64*)(r)); break;  \
 			} \
 			__osl_v; \
 		}), \
@@ -500,7 +452,6 @@ extern void osl_pkt_orphan_partial(struct sk_buff *skb);
 typedef struct ctfpool {
 	void		*head;
 	spinlock_t	lock;
-	osl_t		*osh;
 	uint		max_obj;
 	uint		curr_obj;
 	uint		obj_size;
@@ -684,10 +635,8 @@ extern uint osl_pktalloced(osl_t *osh);
 #define OSL_RAND()		osl_rand()
 extern uint32 osl_rand(void);
 
-#if !defined(BCM_SECURE_DMA)
 #define	DMA_MAP(osh, va, size, direction, p, dmah) \
 	osl_dma_map((osh), (va), (size), (direction), (p), (dmah))
-#endif /* !(defined(BCM_SECURE_DMA)) */
 
 
 #else /* ! BCMDRIVER */
@@ -712,6 +661,11 @@ extern void bcopy(const void *src, void *dst, size_t len);
 extern int bcmp(const void *b1, const void *b2, size_t len);
 extern void bzero(void *b, size_t len);
 #endif /* ! BCMDRIVER */
+
+typedef struct sec_cma_info {
+	struct sec_mem_elem *sec_alloc_list;
+	struct sec_mem_elem *sec_alloc_list_tail;
+} sec_cma_info_t;
 
 /* Current STB 7445D1 doesn't use ACP and it is non-coherrent.
  * Adding these dummy values for build apss only
@@ -739,14 +693,6 @@ extern void bzero(void *b, size_t len);
 	osl_sec_dma_unmap((osh), (pa), (size), (direction), (p), (dmah), (pcma), (offset))
 #define	SECURE_DMA_UNMAP_ALL(osh, pcma) \
 	osl_sec_dma_unmap_all((osh), (pcma))
-
-#define DMA_MAP(osh, va, size, direction, p, dmah)
-
-typedef struct sec_cma_info {
-	struct sec_mem_elem *sec_alloc_list;
-	struct sec_mem_elem *sec_alloc_list_tail;
-} sec_cma_info_t;
-
 #if defined(__ARM_ARCH_7A__)
 #define CMA_BUFSIZE_4K	4096
 #define CMA_BUFSIZE_2K	2048
@@ -754,13 +700,13 @@ typedef struct sec_cma_info {
 
 #define	CMA_BUFNUM		2048
 #define SEC_CMA_COHERENT_BLK 0x8000 /* 32768 */
-#define SEC_CMA_COHERENT_MAX 278
+#define SEC_CMA_COHERENT_MAX 32
 #define CMA_DMA_DESC_MEMBLOCK	(SEC_CMA_COHERENT_BLK * SEC_CMA_COHERENT_MAX)
 #define CMA_DMA_DATA_MEMBLOCK	(CMA_BUFSIZE_4K*CMA_BUFNUM)
 #define	CMA_MEMBLOCK		(CMA_DMA_DESC_MEMBLOCK + CMA_DMA_DATA_MEMBLOCK)
-#define CONT_REGION	0x02		/* Region CMA */
+#define CONT_ARMREGION	0x02		/* Region CMA */
 #else
-#define CONT_REGION	0x00		/* To access the MIPs mem, Not yet... */
+#define CONT_MIPREGION	0x00		/* To access the MIPs mem, Not yet... */
 #endif /* !defined __ARM_ARCH_7A__ */
 
 #define SEC_DMA_ALIGN	(1<<16)
@@ -771,7 +717,6 @@ typedef struct sec_mem_elem {
 	void			*va;        /**< virtual address of driver pkt */
 	dma_addr_t		dma_handle; /**< bus address assign by linux */
 	void			*vac;       /**< virtual address of cma buffer */
-	struct page *pa_cma_page;	/* phys to page address */
 	struct	sec_mem_elem	*next;
 } sec_mem_elem_t;
 
@@ -793,17 +738,5 @@ typedef struct sk_buff_head PKT_LIST;
 #define PKTLIST_DEQ(x)		skb_dequeue((struct sk_buff_head *)(x))
 #define PKTLIST_UNLINK(x, y)	skb_unlink((struct sk_buff *)(y), (struct sk_buff_head *)(x))
 #define PKTLIST_FINI(x)		skb_queue_purge((struct sk_buff_head *)(x))
-
-typedef struct osl_timer {
-	struct timer_list *timer;
-	bool   set;
-} osl_timer_t;
-
-typedef void (*linux_timer_fn)(ulong arg);
-
-extern osl_timer_t * osl_timer_init(osl_t *osh, const char *name, void (*fn)(void *arg), void *arg);
-extern void osl_timer_add(osl_t *osh, osl_timer_t *t, uint32 ms, bool periodic);
-extern void osl_timer_update(osl_t *osh, osl_timer_t *t, uint32 ms, bool periodic);
-extern bool osl_timer_del(osl_t *osh, osl_timer_t *t);
 
 #endif	/* _linux_osl_h_ */
