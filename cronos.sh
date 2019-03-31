@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Cronos Build Script V3.0
+# Cronos Build Script V3.1
 # For Exynos7420
 # Coded by BlackMesa/AnanJaser1211 @2019
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@
 # Main Dir
 CR_DIR=$(pwd)
 # Define toolchan path
-CR_TC=~/Android/Toolchains/linaro-7.4.1-aarch64-linux/bin/aarch64-linux-gnu-
+CR_TC=~/Android/Toolchains/linaro-4.9.4-aarch64-linux/bin/aarch64-linux-gnu-
 # Define proper arch and dir for dts files
 CR_DTS=arch/arm64/boot/dts
 # Define boot.img out dir
@@ -54,7 +54,7 @@ export $CR_ARCH
 ##########################################
 # Device specific Variables [SM-N920CIGSLK]
 CR_DTSFILES_N920C="exynos7420-noblelte_eur_open_00.dtb exynos7420-noblelte_eur_open_01.dtb exynos7420-noblelte_eur_open_02.dtb exynos7420-noblelte_eur_open_03.dtb exynos7420-noblelte_eur_open_04.dtb exynos7420-noblelte_eur_open_05.dtb exynos7420-noblelte_eur_open_06.dtb exynos7420-noblelte_eur_open_08.dtb exynos7420-noblelte_eur_open_09.dtb"
-CR_CONFG_N920C=exynos7420-noblelte_defconfig
+CR_CONFG_N920C=noblelte_defconfig
 CR_VARIANT_N920C=N920C
 # Device specific Variables [SM-G920X]
 CR_DTSFILES_G920X="exynos7420-zeroflte_eur_open_00.dtb exynos7420-zeroflte_eur_open_01.dtb exynos7420-zeroflte_eur_open_02.dtb exynos7420-zeroflte_eur_open_03.dtb exynos7420-zeroflte_eur_open_04.dtb exynos7420-zeroflte_eur_open_05.dtb exynos7420-zeroflte_eur_open_06.dtb exynos7420-zeroflte_eur_open_07.dtb"
@@ -113,10 +113,10 @@ BUILD_DTB()
 	# This source does not compile dtbs while doing Image
 	make $CR_DTSFILES
 	./scripts/dtbTool/dtbTool -o ./boot.img-dtb -d $CR_DTS/ -s 2048
-	du -k "./boot.img-dtb" | cut -f1 >sizT
-	sizT=$(head -n 1 sizT)
-	rm -rf sizT
-	echo "Combined DTB Size = $sizT Kb"
+	du -k "./boot.img-dtb" | cut -f1 >dtbsz
+	dtbsz=$(head -n 1 dtbsz)
+	rm -rf dtbsz
+	echo "Combined DTB Size = $dtbsz Kb"
 	rm -rf $CR_DTS/.*.tmp
 	rm -rf $CR_DTS/.*.cmd
 	rm -rf $CR_DTS/*.dtb
@@ -146,8 +146,13 @@ PACK_BOOT_IMG()
 	$CR_AIK/repackimg.sh
 	# Remove red warning at boot
 	echo -n "SEANDROIDENFORCE" » $CR_AIK/image-new.img
+    # Calculate Boot.img Size
+    du -k "$CR_AIK/image-new.img" | cut -f1 >bootsz
+    bootsz=$(head -n 1 bootsz)
+    rm -rf bootsz
 	# Move boot.img to out dir
 	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_DATE-$CR_VARIANT.img
+    echo " "
 	$CR_AIK/cleanup.sh
 }
 PACK_BOOT_IMG_TREBLE()
@@ -189,7 +194,6 @@ do
     case $menuvar in
         "SM-N920C")
             clear
-            CLEAN_SOURCE
             echo "Starting $CR_VARIANT_N920C kernel build..."
             CR_VARIANT=$CR_VARIANT_N920C
             CR_CONFG=$CR_CONFG_N920C
@@ -201,7 +205,8 @@ do
             echo "----------------------------------------------"
             echo "$CR_VARIANT kernel build finished."
             echo "$CR_VARIANT Ready at $CR_OUT"
-            echo "Combined DTB Size = $sizT Kb"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
             echo "Press Any key to end the script"
             echo "----------------------------------------------"
             read -n1 -r key
@@ -209,7 +214,6 @@ do
             ;;
         "SM-G920X")
             clear
-            CLEAN_SOURCE
             echo "Starting $CR_VARIANT_G920X kernel build..."
             CR_VARIANT=$CR_VARIANT_G920X
             CR_CONFG=$CR_CONFG_G920X
@@ -221,7 +225,8 @@ do
             echo "----------------------------------------------"
             echo "$CR_VARIANT kernel build finished."
             echo "$CR_VARIANT Ready at $CR_OUT"
-            echo "Combined DTB Size = $sizT Kb"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
             echo "Press Any key to end the script"
             echo "----------------------------------------------"
             read -n1 -r key
@@ -229,7 +234,6 @@ do
             ;;
         "SM-G925X")
             clear
-            CLEAN_SOURCE
             echo "Starting $CR_VARIANT_G925X kernel build..."
             CR_VARIANT=$CR_VARIANT_G925X
             CR_CONFG=$CR_CONFG_G925X
@@ -241,7 +245,8 @@ do
             echo "----------------------------------------------"
             echo "$CR_VARIANT kernel build finished."
             echo "$CR_VARIANT Ready at $CR_OUT"
-            echo "Combined DTB Size = $sizT Kb"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
             echo "Press Any key to end the script"
             echo "----------------------------------------------"
             read -n1 -r key
@@ -249,7 +254,6 @@ do
             ;;
         "SM-G928X")
             clear
-            CLEAN_SOURCE
             echo "Starting $CR_VARIANT_G928X kernel build..."
             CR_VARIANT=$CR_VARIANT_G928X
             CR_CONFG=$CR_CONFG_G928X
@@ -261,7 +265,8 @@ do
             echo "----------------------------------------------"
             echo "$CR_VARIANT kernel build finished."
             echo "$CR_VARIANT Ready at $CR_OUT"
-            echo "Combined DTB Size = $sizT Kb"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"           
             echo "Press Any key to end the script"
             echo "----------------------------------------------"
             read -n1 -r key
