@@ -10,11 +10,13 @@ on early-init
 
 on boot
 
-
 on property:sys.boot_completed=1
 
    # Restore Stock Max GPU Freq
    write /sys/devices/14ac0000.mali/dvfs_max_lock 700
+
+   # WifiLoader
+   start wifiloader
 
 # PrivateMode Mountpoints     
    mkdir /mnt/shell/ 0750 shell shell
