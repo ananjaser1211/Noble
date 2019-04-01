@@ -143,6 +143,7 @@ fi;
 if [ ! -r /data/system/users/0/personalist.xml ]; then
  	chmod 600 /data/system/users/0/personalist.xml
  	chown system:system /data/system/users/0/personalist.xml
+fi;
 
    log_print "Disable Tracing"
 
