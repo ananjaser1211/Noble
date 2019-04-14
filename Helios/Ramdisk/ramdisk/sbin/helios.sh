@@ -183,11 +183,6 @@ su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeRe
 # RefinedLogger
 /system/bin/logcat *:E > /data/helios/Refined_logger.log
 
-   log_print "Set WQHD"
-
-   wm size 1440x2560
-   wm density 560
-
    log_print "Remount"
 
 mount -o remount,ro -t auto /
