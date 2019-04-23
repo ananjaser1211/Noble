@@ -38,10 +38,6 @@
 #include <linux/of_gpio.h>
 #include <linux/irq.h>
 
-#ifdef CONFIG_POWERSUSPEND
-#include <linux/powersuspend.h>
-#endif
-
 #include <mach/regs-clock.h>
 #include <mach/exynos-pm.h>
 #include <media/exynos_mc.h>
@@ -132,7 +128,6 @@ static atomic_t extra_vsync_wait;
 
 static void tracing_mark_write( int pid, char id, char* str1, int value )
 {
-#ifdef CONFIG_TRACING
 	char buf[80];
 
 	if(!pid) return;
@@ -152,7 +147,6 @@ static void tracing_mark_write( int pid, char id, char* str1, int value )
 	}
 
 	trace_puts(buf);
-#endif
 }
 /*-----------------------------------------------------------------*/
 
@@ -1093,7 +1087,7 @@ static int decon_get_overlap_cnt(struct decon_device *decon,
 }
 #endif
 
-void vpp_dump(struct decon_device *decon)
+static void vpp_dump(struct decon_device *decon)
 {
 	int i;
 
@@ -1862,9 +1856,6 @@ static int decon_blank(int blank_mode, struct fb_info *info)
 	case FB_BLANK_NORMAL:
 		DISP_SS_EVENT_LOG(DISP_EVT_BLANK, &decon->sd, ktime_set(0, 0));
 		ret = decon_disable(decon);
-#ifdef CONFIG_POWERSUSPEND
-		set_power_suspend_state_panel_hook(POWER_SUSPEND_ACTIVE);
-#endif
 		if (ret) {
 			decon_err("failed to disable decon\n");
 			goto blank_exit;
@@ -1873,9 +1864,6 @@ static int decon_blank(int blank_mode, struct fb_info *info)
 	case FB_BLANK_UNBLANK:
 		DISP_SS_EVENT_LOG(DISP_EVT_UNBLANK, &decon->sd, ktime_set(0, 0));
 		ret = decon_enable(decon);
-#ifdef CONFIG_POWERSUSPEND
-		set_power_suspend_state_panel_hook(POWER_SUSPEND_INACTIVE);
-#endif
 		if (ret) {
 			decon_err("failed to enable decon\n");
 			goto blank_exit;
@@ -4582,7 +4570,7 @@ int decon_doze_enable(struct decon_device *decon)
 #endif
 
 #ifdef CONFIG_FB_WINDOW_UPDATE
-	if ((decon->out_type == DECON_OUT_DSI) && (decon->need_update)) {
+	if ((decon->pdata->out_type == DECON_OUT_DSI) && (decon->need_update)) {
 		decon->need_update = false;
 		decon->update_win.x = 0;
 		decon->update_win.y = 0;
@@ -4660,7 +4648,7 @@ int decon_doze_suspend(struct decon_device *decon)
 	iovmm_deactivate(decon->dev);
 
 	/* DMA protection disable must be happen on vpp domain is alive */
-	if (decon->out_type == DECON_OUT_DSI) {
+	if (psr.out_type == DECON_OUT_DSI) {
 		decon_set_protected_content(decon, NULL);
 		decon->vpp_usage_bitmask = 0;
 		decon_vpp_stop(decon, true);
@@ -4677,7 +4665,7 @@ int decon_doze_suspend(struct decon_device *decon)
 	decon_runtime_suspend(decon->dev);
 #endif
 
-	if (decon->out_type == DECON_OUT_DSI) {
+	if (psr.out_type == DECON_OUT_DSI) {
 #if 1
 		/* stop output device (mipi-dsi or hdmi) */
 		ret = v4l2_subdev_call(decon->output_sd, video, s_stream, DSIM_REQ_DOZE_SUSPEND);
@@ -4688,7 +4676,7 @@ int decon_doze_suspend(struct decon_device *decon)
 		}
 #endif
 	}
-	if (decon->out_type == DECON_OUT_DSI) {
+	if (psr.out_type == DECON_OUT_DSI) {
 		pm_relax(decon->dev);
 		dev_warn(decon->dev, "pm_relax");
 	}
