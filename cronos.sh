@@ -28,7 +28,6 @@ CR_OUT=$CR_DIR/Helios/Out
 CR_AIK=$CR_DIR/Helios/A.I.K
 # Main Ramdisk Location
 CR_RAMDISK=$CR_DIR/Helios/Ramdisk
-CR_RAMDISK_TREBLE=$CR_DIR/Helios/Treble
 # Compiled image name and location (Image/zImage)
 CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
 # Compiled dtb by dtbtool
@@ -68,6 +67,22 @@ CR_VARIANT_G925X=G925X
 CR_DTSFILES_G928X="exynos7420-zenlte_eur_open_00.dtb exynos7420-zenlte_eur_open_09.dtb"
 CR_CONFG_G928X=zenlte_defconfig
 CR_VARIANT_G928X=G928X
+# Device specific Variables [SM-N920P_T_W8]
+CR_DTSFILES_N920P_T_W8="exynos7420-noblelte_usa_00.dtb exynos7420-noblelte_usa_01.dtb exynos7420-noblelte_usa_02.dtb exynos7420-noblelte_usa_03.dtb exynos7420-noblelte_usa_04.dtb exynos7420-noblelte_usa_06.dtb exynos7420-noblelte_usa_07.dtb exynos7420-noblelte_usa_08.dtb exynos7420-noblelte_usa_09.dtb"
+CR_CONFG_N920P_T_W8=noblelte_US_defconfig
+CR_VARIANT_N920P_T_W8=N920P_T_W8
+# Device specific Variables [SM-G920P_T_W8]
+CR_DTSFILES_G920P_T_W8="exynos7420-zeroflte_usa_00.dtb exynos7420-zeroflte_usa_01.dtb exynos7420-zeroflte_usa_02.dtb exynos7420-zeroflte_usa_03.dtb exynos7420-zeroflte_usa_04.dtb exynos7420-zeroflte_usa_05.dtb"
+CR_CONFG_G920P_T_W8=zeroflte_US_defconfig
+CR_VARIANT_G920P_T_W8=G920P_T_W8
+# Device specific Variables [SM-G925P_T_W8]
+CR_DTSFILES_G925P_T_W8="exynos7420-zerolte_usa_00.dtb exynos7420-zerolte_usa_01.dtb exynos7420-zerolte_usa_02.dtb exynos7420-zerolte_usa_03.dtb exynos7420-zerolte_usa_04.dtb exynos7420-zerolte_usa_05.dtb exynos7420-zerolte_usa_06.dtb exynos7420-zerolte_usa_07.dtb"
+CR_CONFG_G925P_T_W8=zerolte_US_defconfig
+CR_VARIANT_G925P_T_W8=G925P_T_W8
+# Device specific Variables [SM-G928P_T_W8]
+CR_DTSFILES_G928P_T_W8="exynos7420-zenlte_usa_00.dtb exynos7420-zenlte_usa_01.dtb exynos7420-zenlte_usa_02.dtb exynos7420-zenlte_usa_03.dtb exynos7420-zenlte_usa_04.dtb exynos7420-zenlte_usa_08.dtb exynos7420-zenlte_usa_09.dtb"
+CR_CONFG_G928P_T_W8=zenlte_US_defconfig
+CR_VARIANT_G928P_T_W8=G928P_T_W8
 #####################################################
 
 # Script functions
@@ -94,7 +109,7 @@ BUILD_ZIMAGE()
 	echo " "
 	echo "Building zImage for $CR_VARIANT"
 	export LOCALVERSION=-$CR_NAME-$CR_VERSION-$CR_VARIANT-$CR_DATE
-	make  $CR_CONFG
+    make  $CR_CONFG 
 	make -j$CR_JOBS
 	if [ ! -e ./arch/arm64/boot/Image ]; then
 	exit 0;
@@ -129,14 +144,6 @@ PACK_BOOT_IMG()
 	echo " "
 	echo "Building Boot.img for $CR_VARIANT"
 	cp -rf $CR_RAMDISK/* $CR_AIK
-	# To avoid any permission issues
-	echo "Fix Ramdisk Permissions"
-	cd $CR_RAMDISK
-	find -type d -exec chmod 777 {} \;
-	find -type f -exec chmod 777 {} \;
-	find -name "*.rc" -exec chmod 777 {} \;
-	find -name "*.sh" -exec chmod 777 {} \;
-	chmod -Rf 777 init sbin
 	# Copy Ramdisk
 	cp -rf $CR_RAMDISK/* $CR_AIK
 	# Move Compiled kernel and dtb to A.I.K Folder
@@ -155,40 +162,13 @@ PACK_BOOT_IMG()
     echo " "
 	$CR_AIK/cleanup.sh
 }
-PACK_BOOT_IMG_TREBLE()
-{
-	echo "----------------------------------------------"
-	echo " "
-	echo "Building Boot.img for $CR_VARIANT"
-	cp -rf $CR_RAMDISK_TREBLE/* $CR_AIK
-	# To avoid any permission issues
-	echo "Fix Ramdisk Permissions"
-	cd $CR_RAMDISK_TREBLE
-	find -type d -exec chmod 755 {} \;
-	find -type f -exec chmod 644 {} \;
-	find -name "*.rc" -exec chmod 750 {} \;
-	find -name "*.sh" -exec chmod 750 {} \;
-	chmod -Rf 750 init sbin
-	# Copy Ramdisk
-	cp -rf $CR_RAMDISK_TREBLE/* $CR_AIK
-	# Move Compiled kernel and dtb to A.I.K Folder
-	mv $CR_KERNEL $CR_AIK/split_img/boot.img-zImage
-	mv $CR_DTB $CR_AIK/split_img/boot.img-dtb
-	# Create boot.img
-	$CR_AIK/repackimg.sh
-	# Remove red warning at boot
-	echo -n "SEANDROIDENFORCE" » $CR_AIK/image-new.img
-	# Move boot.img to out dir
-	mv $CR_AIK/image-new.img $CR_OUT/$CR_NAME-$CR_VERSION-$CR_DATE-$CR_VARIANT-Treble.img
-	$CR_AIK/cleanup.sh
-}
 # Main Menu
 clear
 echo "----------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "----------------------------------------------"
-PS3='Please select your option (1-5): '
-menuvar=("SM-N920C" "SM-G920X" "SM-G925X" "SM-G928X" "Exit")
+PS3='Please select your option (1-9): '
+menuvar=("SM-N920C" "SM-G920X" "SM-G925X" "SM-G928X" "SM-N920P_T_W8" "SM-G920P_T_W8" "SM-G925P_T_W8" "SM-G928P_T_W8" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
@@ -272,6 +252,86 @@ do
             read -n1 -r key
             break
             ;;
+        "SM-N920P_T_W8")
+            clear
+            echo "Starting $CR_VARIANT_N920P_T_W8 kernel build..."
+            CR_VARIANT=$CR_VARIANT_N920P_T_W8
+            CR_CONFG=$CR_CONFG_N920P_T_W8
+            CR_DTSFILES=$CR_DTSFILES_N920P_T_W8
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G920P_T_W8")
+            clear
+            echo "Starting $CR_VARIANT_G920P_T_W8 kernel build..."
+            CR_VARIANT=$CR_VARIANT_G920P_T_W8
+            CR_CONFG=$CR_CONFG_G920P_T_W8
+            CR_DTSFILES=$CR_DTSFILES_G920P_T_W8
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G925P_T_W8")
+            clear
+            echo "Starting $CR_VARIANT_G925P_T_W8 kernel build..."
+            CR_VARIANT=$CR_VARIANT_G925P_T_W8
+            CR_CONFG=$CR_CONFG_G925P_T_W8
+            CR_DTSFILES=$CR_DTSFILES_G925P_T_W8
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;
+        "SM-G928P_T_W8")
+            clear
+            echo "Starting $CR_VARIANT_G928P_T_W8 kernel build..."
+            CR_VARIANT=$CR_VARIANT_G928P_T_W8
+            CR_CONFG=$CR_CONFG_G928P_T_W8
+            CR_DTSFILES=$CR_DTSFILES_G928P_T_W8
+            BUILD_ZIMAGE
+            BUILD_DTB
+            PACK_BOOT_IMG
+            echo " "
+            echo "----------------------------------------------"
+            echo "$CR_VARIANT kernel build finished."
+            echo "$CR_VARIANT Ready at $CR_OUT"
+            echo "Combined DTB Size = $dtbsz Kb"
+            echo "Combined BOOT Size = $bootsz Kb"           
+            echo "Press Any key to end the script"
+            echo "----------------------------------------------"
+            read -n1 -r key
+            break
+            ;;            
     "Exit")
             break
             ;;
